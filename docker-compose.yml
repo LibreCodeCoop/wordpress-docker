@@ -16,12 +16,18 @@ services:
       - ./volumes/site/www:/var/www/html
       - ./.docker/php56/config/apache.conf:/etc/apache2/sites-available/000-default.conf
       - ./.docker/php56/config/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    env_file:
+      - .php5.env
     networks:
       - reverse-proxy
       - mysql
-    environment:
-      - XDEBUG_CONFIG=remote_host=172.18.0.1 remote_enable=1
-      - DEFAULT_HOST=homolog.amperj.org
-      - VIRTUAL_HOST=homolog.amperj.org
-      - LETSENCRYPT_HOST=homolog.amperj.org
-      - LETSENCRYPT_EMAIL=adm@librecode.coop
+  wordpress:
+    build:
+      context: .docker/wordpress
+    volumes:
+      - ./volumes/wordpress:/var/www/html
+    env_file:
+      - .env
+    networks:
+      - reverse-proxy
+      - mysql
