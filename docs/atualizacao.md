@@ -70,6 +70,11 @@
   ```
 * Aplicar atualizações
   http://<URL>/wp-admin/network/update-core.php
+* Desativar plugin `og-tags` na rede e mantê-lo ativo apenas para o site principal
+  ```
+  docker-compose exec -u www-data wordpress wp plugin deactivate og-tags --network
+  docker-compose exec -u www-data wordpress wp plugin activate og-tags
+  ```
 * O plugin `theme-my-login` na versão mais nova não está compatível com o site.
   * Downgrade de versão de plugin:
     * Remover a versão mais nova do plugin `theme-my-login`
