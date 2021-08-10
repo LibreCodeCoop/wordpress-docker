@@ -23,6 +23,7 @@
 * Desativar todos os plugins
   ```bash
   docker-compose exec -u www-data php56 wp plugin deactivate --all --network
+  docker-compose exec -u www-data php56 wp plugin deactivate --all
   ```
 * Fazer backup de banco
   ```
@@ -32,9 +33,11 @@
 ## Etapas no PHP8
 * Copiar arquivos do PHP56
   ```bash
+  cp -r volumes/site/www/.git volumes/wordpress/
   cp -r volumes/site/www/wp-content/ volumes/wordpress/
-  cp volumes/site/www/wp-config.php volumes/wordpress/
-  cp volumes/site/www/.htaccess volumes/wordpress/
+  cd volumes/wordpress
+  git checkout -- .
+  cd -
   ```
 * Corrigir permissões:
   ```bash
@@ -42,9 +45,11 @@
   ```
 * Restaurar backup do banco PHP56 para o banco do PHP56
 * Levantar container
-* acessar /wp-admin
-* atualizar banco de dados
-  `/wp-admin/upgrade.php`
+* Desativar todos os plugins
+  ```bash
+  docker-compose exec -u www-data wordpress wp plugin deactivate --all --network
+  docker-compose exec -u www-data wordpress wp plugin deactivate --all
+  ```
 * Atualizar plugins e temas
   ```bash
   docker-compose exec -u www-data wordpress wp plugin update --all
@@ -56,20 +61,13 @@
   ```
 * Ativar plugins
   ```bash
-  docker-compose exec -u www-data wordpress wp plugin activate wp-cpf-as-username
+  docker-compose exec -u www-data wordpress wp plugin activate 3d-flipbook-dflip-lite advanced-custom-fields-google-map-extended acf-to-rest-api admin-menu-editor advanced-custom-fields amperj-plugin/amperj amperj-slider better-rest-api-featured-images classic-editor cookie-notice custom-post-type-ui export-import-menus json-api json-api-auth json-api-user ml-slider og-tags photo-gallery popup-builder really-simple-ssl google-captcha regenerate-thumbnails shortcodes-ultimate show-current-template theme-my-login toggle-wpautop widget-importer-exporter wp-mail-bank wp-user-avatar wp-cpf-as-username --network
+  # docker-compose exec -u www-data wordpress wp plugin activate wordpress-importer
   ```
 * Corrigir permissões:
   ```bash
   chown -R www-data:www-data volumes/wordpress/
   ```
-* fazer login com um super admin
-* Ativar plugins
-  ```bash
-  docker-compose exec -u www-data wordpress wp plugin activate 3d-flipbook-dflip-lite advanced-custom-fields-google-map-extended acf-to-rest-api admin-menu-editor advanced-custom-fields amperj-plugin/amperj amperj-slider better-rest-api-featured-images classic-editor cookie-notice custom-post-type-ui export-import-menus json-api json-api-auth json-api-user ml-slider og-tags photo-gallery popup-builder really-simple-ssl google-captcha regenerate-thumbnails shortcodes-ultimate show-current-template theme-my-login toggle-wpautop widget-importer-exporter wp-mail-bank wp-user-avatar --network
-  # docker-compose exec -u www-data wordpress wp plugin activate wordpress-importer
-  ```
-* Aplicar atualizações
-  http://<URL>/wp-admin/network/update-core.php
 * Desativar plugin `og-tags` na rede e mantê-lo ativo apenas para o site principal
   ```
   docker-compose exec -u www-data wordpress wp plugin deactivate og-tags --network
@@ -85,3 +83,9 @@
       ```bash
       cp -r volumes/site/www/wp-content/plugins/theme-my-login/ volumes/wordpress/wp-content/plugins/theme-my-login/
       ```
+* acessar /wp-admin
+* fazer login com um super admin
+* atualizar banco de dados
+  `/wp-admin/upgrade.php`
+* Aplicar atualizações
+  http://<URL>/wp-admin/network/update-core.php
