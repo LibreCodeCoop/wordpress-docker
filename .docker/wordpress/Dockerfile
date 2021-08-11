@@ -4,7 +4,12 @@ FROM wordpress:5.8-php8.0
 RUN pecl install xdebug-3.0.4 \
     && docker-php-ext-enable xdebug
 
-#Instala wp-cli
+# Install intl
+RUN apt-get update \
+    && apt-get install -y libicu-dev \
+    && docker-php-ext-install intl
+
+#Install wp-cli
 RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar --output /usr/bin/wp
 RUN chmod +x /usr/bin/wp
 RUN wp --info
