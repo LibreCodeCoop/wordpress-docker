@@ -1,12 +1,12 @@
 version: "3.7"
 
-networks:
-  reverse-proxy:
-    external: true
-    name: reverse-proxy
-  mysql:
-    external: true
-    name: mysql
+# networks:
+#   reverse-proxy:
+#     external: true
+#     name: reverse-proxy
+#   mysql:
+#     external: true
+#     name: mysql
 
 services:
   php56:
@@ -18,9 +18,11 @@ services:
       - ./.docker/php56/config/php.ini:/usr/local/etc/php/conf.d/custom.ini
     env_file:
       - .php5.env
-    networks:
-      - reverse-proxy
-      - mysql
+    ports:
+      - 80:80
+    # networks:
+    #   - reverse-proxy
+    #   - mysql
   wordpress:
     build:
       context: .docker/wordpress
@@ -28,6 +30,20 @@ services:
       - ./volumes/wordpress:/var/www/html
     env_file:
       - .env
-    networks:
-      - reverse-proxy
-      - mysql
+    ports:
+      - 8080:80
+    # networks:
+    #   - reverse-proxy
+    #   - mysql
+  db:
+   build:
+     context: .docker/mysql
+   volumes:
+     # - ./.docker/mysql/conf:/etc/mysql/conf.d
+     - ./volumes/mysql/dump:/docker-entrypoint-initdb.d
+     - ./volumes/mysql/data:/var/lib/mysql
+   environment:
+     - MYSQL_ROOT_PASSWORD=root
+   ports:
+     - 3306:3306
+   restart: always

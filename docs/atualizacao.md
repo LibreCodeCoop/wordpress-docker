@@ -50,6 +50,10 @@
   docker-compose exec -u www-data wordpress wp plugin deactivate --all --network
   docker-compose exec -u www-data wordpress wp plugin deactivate --all
   ```
+* Remover plugins sem uso
+  ```
+  docker-compose exec -u www-data wordpress wp plugin delete 3d-flipbook-dflip-lite popup-builder
+  ```
 * Atualizar plugins e temas
   ```bash
   docker-compose exec -u www-data wordpress wp plugin update --all
@@ -61,7 +65,7 @@
   ```
 * Ativar plugins
   ```bash
-  docker-compose exec -u www-data wordpress wp plugin activate 3d-flipbook-dflip-lite advanced-custom-fields-google-map-extended acf-to-rest-api admin-menu-editor advanced-custom-fields amperj-plugin/amperj amperj-slider better-rest-api-featured-images classic-editor cookie-notice custom-post-type-ui export-import-menus json-api json-api-auth json-api-user ml-slider og-tags photo-gallery popup-builder really-simple-ssl google-captcha regenerate-thumbnails shortcodes-ultimate show-current-template theme-my-login toggle-wpautop widget-importer-exporter wp-mail-bank wp-user-avatar wp-cpf-as-username --network
+  docker-compose exec -u www-data wordpress wp plugin activate advanced-custom-fields-google-map-extended acf-to-rest-api admin-menu-editor advanced-custom-fields amperj-plugin/amperj amperj-slider better-rest-api-featured-images classic-editor cookie-notice custom-post-type-ui export-import-menus json-api json-api-auth json-api-user ml-slider og-tags photo-gallery really-simple-ssl google-captcha regenerate-thumbnails shortcodes-ultimate show-current-template theme-my-login toggle-wpautop widget-importer-exporter wp-mail-bank wp-user-avatar wp-cpf-as-username --network
   # docker-compose exec -u www-data wordpress wp plugin activate wordpress-importer
   ```
 * Corrigir permissões:
