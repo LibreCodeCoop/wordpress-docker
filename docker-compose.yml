@@ -47,3 +47,7 @@ services:
    ports:
      - 3306:3306
    restart: always
+  #mailhog:
+  #  image: blueimp/mailhog
+  #  ports:
+  #    - 8025:8025

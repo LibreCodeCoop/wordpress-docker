@@ -91,7 +91,6 @@
       theme-my-login \
       toggle-wpautop \
       widget-importer-exporter \
-      wp-mail-bank \
       wp-user-avatar \
       wp-cpf-as-username \
       --network
@@ -104,6 +103,13 @@
   ```
   docker-compose exec -u www-data wordpress wp plugin deactivate og-tags --network
   docker-compose exec -u www-data wordpress wp plugin activate og-tags
+  ```
+* Remoção definitiva de plugins
+  ```
+  rm -rf volumes/wordpress/wp-content/plugins/wp-mail-*
+  rm -rf volumes/wordpress/wp-content/plugins/og-tags
+  rm -rf volumes/wordpress/wp-content/plugins/easy-wp-smtp
+  rm -rf volumes/wordpress/wp-content/plugins/hello-dolly
   ```
 * O plugin `theme-my-login` na versão mais nova não está compatível com o site.
   * Downgrade de versão de plugin:
