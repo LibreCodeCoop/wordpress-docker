@@ -63,6 +63,10 @@
   ```bash
   git clone https://github.com/LibreCodeCoop/wp-cpf-as-username volumes/wordpress/wp-content/plugins/wp-cpf-as-username
   ```
+* Instalar plugin para enviar email usando SMTP:
+  ```bash
+  git clone https://github.com/LibreCodeCoop/wp-simple-smtp volumes/wordpress/wp-content/plugins/wp-simple-smtp
+  ```
 * Ativar plugins
   ```bash
   docker-compose exec -u www-data wordpress wp plugin activate \
@@ -93,6 +97,7 @@
       widget-importer-exporter \
       wp-user-avatar \
       wp-cpf-as-username \
+      wp-simple-smtp \
       --network
   ```
 * Corrigir permissões:
