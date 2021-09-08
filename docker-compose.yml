@@ -1,28 +1,30 @@
 version: "3.7"
 
-# networks:
-#   reverse-proxy:
-#     external: true
-#     name: reverse-proxy
-#   mysql:
-#     external: true
-#     name: mysql
+networks:
+  reverse-proxy:
+    external: true
+    name: reverse-proxy
+  mysql:
+    external: true
+    name: mysql
+  internal:
+    driver: bridge
 
 services:
-  php56:
-    build:
-      context: .docker/php56
-    volumes:
-      - ./volumes/site/www:/var/www/html
-      - ./.docker/php56/config/apache.conf:/etc/apache2/sites-available/000-default.conf
-      - ./.docker/php56/config/php.ini:/usr/local/etc/php/conf.d/custom.ini
-    env_file:
-      - .php5.env
-    ports:
-      - 80:80
-    # networks:
-    #   - reverse-proxy
-    #   - mysql
+  #php56:
+  #  build:
+  #    context: .docker/php56
+  #  volumes:
+  #    - ./volumes/site/www:/var/www/html
+  #    - ./.docker/php56/config/apache.conf:/etc/apache2/sites-available/000-default.conf
+  #    - ./.docker/php56/config/php.ini:/usr/local/etc/php/conf.d/custom.ini
+  #  env_file:
+  #    - .php5.env
+  #  ports:
+  #    - 8080:80
+  #  networks:
+  #    - reverse-proxy
+  #    - mysql
   wordpress:
     build:
       context: .docker/wordpress
@@ -30,12 +32,27 @@ services:
       - ./volumes/wordpress:/var/www/html
     env_file:
       - .env
+    networks:
+      - mysql
+      - internal
+  nginx:
+    depends_on:
+      - wordpress
+    image: nginx
+    restart: unless-stopped
+    volumes:
+      - ./volumes/wordpress:/var/www/html
+      - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - reverse-proxy
+      - internal
     ports:
-      - 8080:80
-    # networks:
-    #   - reverse-proxy
-    #   - mysql
-  db:
+      - 80:80
+    environment:
+      - DEFAULT_HOST
+      - VIRTUAL_HOST
+      - LETSENCRYPT_HOST
+  mysql:
    build:
      context: .docker/mysql
    volumes:
