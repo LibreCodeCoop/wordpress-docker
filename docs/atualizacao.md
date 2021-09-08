@@ -4,7 +4,7 @@
 
 * Fazer um dump do banco de produção
   ```
-  mysqldump --single-transaction -u root -p --databases php5 > amperj-novo.sql
+  mysqldump --single-transaction -u root -p --databases php5 > wordpress-novo.sql
   ```
 * Restaurar o dump em um novo banco
 * Atualizar o arquivo `.php56.env` com os dados do banco novo
@@ -27,7 +27,7 @@
   ```
 * Fazer backup de banco
   ```
-  mysqldump --single-transaction -u root -p --databases php5 > amperj-novo.sql
+  mysqldump --single-transaction -u root -p --databases php5 > wordpress-novo.sql
   ```
 
 ## Etapas no PHP8
