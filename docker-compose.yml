@@ -64,6 +64,8 @@ services:
    ports:
      - 3306:3306
    restart: always
+   networks:
+     - mysql
   #mailhog:
   #  image: blueimp/mailhog
   #  ports:
