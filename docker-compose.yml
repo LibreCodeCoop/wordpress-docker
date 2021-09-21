@@ -28,6 +28,7 @@ services:
   wordpress:
     build:
       context: .docker/wordpress
+    restart: unless-stopped
     volumes:
       - ./volumes/wordpress:/var/www/html
     env_file:
