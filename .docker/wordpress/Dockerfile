@@ -1,4 +1,4 @@
-FROM wordpress:5.8-php8.0-fpm
+FROM wordpress:5.9-php8.0-fpm
 
 # Install xdebug
 RUN pecl install xdebug-3.0.4 \
