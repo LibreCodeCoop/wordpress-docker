@@ -1,7 +1,7 @@
 FROM wordpress:5.9-php8.0-fpm
 
 # Install xdebug
-RUN pecl install xdebug-3.0.4 \
+RUN pecl install xdebug-3.1.4 \
     && docker-php-ext-enable xdebug
 
 # Install intl
