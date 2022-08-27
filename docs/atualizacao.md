@@ -132,3 +132,43 @@
   `/wp-admin/upgrade.php`
 * Aplicar atualizações
   http://<URL>/wp-admin/network/update-core.php
+
+# Atualização de plugins, temas e WordPress
+
+## Verificar se há atualizações
+
+Listar atualizações do WordPress
+```
+docker-compose exec -u www-data wordpress wp core check-update
+```
+
+Listar atualizações de plugins
+```
+docker-compose exec -u www-data wordpress wp plugin list --update=available --fields=name,status,update,version,update_version
+```
+
+Listar atualizações de temas
+```
+docker-compose exec -u www-data wordpress wp theme list --update=available --fields=name,status,update,version,update_version
+```
+
+## Atualizar
+Atualizar o core do WordPress
+```
+docker-compose exec -u www-data wordpress wp core update
+```
+
+Atualizar as databases da network
+```
+docker-compose exec -u www-data wordpress wp core update-db --network
+```
+
+Atualizar plugins
+```
+docker-compose exec -u www-data wordpress wp plugin update --all --exclude=theme-my-login
+```
+
+Atualizar temas
+```
+docker-compose exec -u www-data wordpress wp theme update --all
+```
