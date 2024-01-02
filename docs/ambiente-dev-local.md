@@ -26,7 +26,3 @@ WHERE option_value = 'a:15:{s:12:"site_has_ssl";b:0;s:4:"hsts";b:0;s:22:"htacces
 ```bash
 docker-compose exec -u www-data wordpress wp plugin deactivate google-captcha --network
 ```
-## Envio de email
-
-* Descomente o mailhog no `docker-compose.yml`
-* Configure as environments para o mailhog
