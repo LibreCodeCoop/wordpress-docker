@@ -9,7 +9,7 @@ RUN chmod uga+x /usr/local/bin/install-php-extensions && sync \
 # Install intl
 RUN apt-get update \
     && apt-get install -y libicu-dev \
-    && docker-php-ext-install intl
+    && intl
 
 # Install wp-cli
 RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar --output /usr/bin/wp
