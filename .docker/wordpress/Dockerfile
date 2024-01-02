@@ -1,4 +1,6 @@
-FROM wordpress:6.4-php8.3-fpm
+ARG VERSION_WORDPRESS
+ARG VERSION_PHP
+FROM wordpress:${VERSION_WORDPRESS}-php${VERSION_PHP}-fpm
 
 # Install PHP Extensions
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
