@@ -40,15 +40,15 @@ services:
       - VIRTUAL_HOST
       - LETSENCRYPT_HOST
   mysql:
-   build:
-     context: .docker/mysql
-   volumes:
-     - ./volumes/mysql/dump:/docker-entrypoint-initdb.d
-     - ./volumes/mysql/data:/var/lib/mysql
-   environment:
-     - MYSQL_ROOT_PASSWORD=root
-   ports:
-     - 3306:3306
-   restart: always
-   networks:
-     - mysql
+    build:
+      context: .docker/mysql
+    volumes:
+      - ./volumes/mysql/dump:/docker-entrypoint-initdb.d
+      - ./volumes/mysql/data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - 3306:3306
+    restart: always
+    networks:
+      - mysql
