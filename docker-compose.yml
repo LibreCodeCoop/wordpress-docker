@@ -11,20 +11,6 @@ networks:
     driver: bridge
 
 services:
-  #php56:
-  #  build:
-  #    context: .docker/php56
-  #  volumes:
-  #    - ./volumes/site/www:/var/www/html
-  #    - ./.docker/php56/config/apache.conf:/etc/apache2/sites-available/000-default.conf
-  #    - ./.docker/php56/config/php.ini:/usr/local/etc/php/conf.d/custom.ini
-  #  env_file:
-  #    - .php5.env
-  #  ports:
-  #    - 8080:80
-  #  networks:
-  #    - reverse-proxy
-  #    - mysql
   wordpress:
     build:
       context: .docker/wordpress
@@ -57,7 +43,6 @@ services:
    build:
      context: .docker/mysql
    volumes:
-     # - ./.docker/mysql/conf:/etc/mysql/conf.d
      - ./volumes/mysql/dump:/docker-entrypoint-initdb.d
      - ./volumes/mysql/data:/var/lib/mysql
    environment:
@@ -67,7 +52,3 @@ services:
    restart: always
    networks:
      - mysql
-  #mailhog:
-  #  image: blueimp/mailhog
-  #  ports:
-  #    - 8025:8025
