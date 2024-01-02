@@ -9,7 +9,7 @@ RUN apt-get update \
     && apt-get install -y libicu-dev \
     && docker-php-ext-install intl
 
-#Install wp-cli
+# Install wp-cli
 RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar --output /usr/bin/wp
 RUN chmod +x /usr/bin/wp
 RUN wp --info
