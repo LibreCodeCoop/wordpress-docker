@@ -8,7 +8,7 @@ Após a instalação:
 
 `docker network create reverse-proxy`
 
-`docker network create mysql`
+`docker network create mariadb`
 
 `docker compose up -d`
 
