@@ -4,14 +4,16 @@ networks:
   reverse-proxy:
     external: true
     name: reverse-proxy
-  mysql:
+  mariadb:
     external: true
-    name: mysql
+    name: mariadb
   internal:
     driver: bridge
 
 services:
   wordpress:
+    depends_on:
+      - mariadb
     build:
       context: .docker/wordpress
       args:
@@ -22,9 +24,14 @@ services:
       - ./volumes/wordpress:/var/www/html
     env_file:
       - .env
+    environment:
+      WORDPRESS_DEBUG: "true"
+      PHP_ERROR_REPORTING: "E_ALL"
+      PHP_DISPLAY_ERRORS: "On"
     networks:
-      - mysql
+      - mariadb
       - internal
+
   nginx:
     depends_on:
       - wordpress
@@ -42,16 +49,15 @@ services:
       - DEFAULT_HOST
       - VIRTUAL_HOST
       - LETSENCRYPT_HOST
-  mysql:
+
+  mariadb:
     build:
-      context: .docker/mysql
+      context: .docker/mariadb
+    env_file:
+      - .env
     volumes:
-      - ./volumes/mysql/dump:/docker-entrypoint-initdb.d
-      - ./volumes/mysql/data:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
-    ports:
-      - 3306:3306
+      - ./volumes/mariadb/dump:/docker-entrypoint-initdb.d
+      - ./volumes/mariadb/data:/var/lib/mariadb
     restart: always
     networks:
-      - mysql
+      - mariadb
