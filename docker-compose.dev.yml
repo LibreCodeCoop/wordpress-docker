@@ -4,6 +4,9 @@ networks:
   reverse-proxy:
     external: true
     name: reverse-proxy
+  mariadb:
+    external: true
+    name: mariadb
   internal:
     driver: bridge
 
@@ -22,6 +25,7 @@ services:
     env_file:
       - .env
     networks:
+      - mariadb
       - internal
 
   nginx:
@@ -41,3 +45,17 @@ services:
       - DEFAULT_HOST
       - VIRTUAL_HOST
       - LETSENCRYPT_HOST
+
+  mariadb:
+    build:
+      context: .docker/mariadb
+    env_file:
+      - .env
+    volumes:
+      - ./volumes/mariadb/dump:/docker-entrypoint-initdb.d
+      - ./volumes/mariadb/data:/var/lib/mariadb
+    restart: always
+    networks:
+      - mariadb
+    environment:
+      - TZ=${TZ:-America/Sao_Paulo}
