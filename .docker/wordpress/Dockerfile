@@ -9,9 +9,17 @@ RUN chmod uga+x /usr/local/bin/install-php-extensions && sync \
     xdebug \
     intl
 
+RUN apt-get update
+RUN apt-get install -y \
+    less
+
 # Install wp-cli
 RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar --output /usr/bin/wp
 RUN chmod +x /usr/bin/wp
 RUN wp --info
 
 COPY config/php.ini /usr/local/etc/php/conf.d/
+
+COPY entrypoint.sh /var/www/scripts/entrypoint.sh
+
+ENTRYPOINT [ "bash", "/var/www/scripts/entrypoint.sh" ]
