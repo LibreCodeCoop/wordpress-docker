@@ -1,67 +1,19 @@
-networks:
-  reverse-proxy:
-    external: true
-    name: reverse-proxy
-  mariadb:
-    external: true
-    name: mariadb
-  internal:
-    driver: bridge
-
 services:
   wordpress:
-    depends_on:
-      - mariadb
-    build:
-      context: .docker/wordpress
-      args:
-        VERSION_WORDPRESS: ${VERSION_WORDPRESS:-6.4}
-        VERSION_PHP: ${VERSION_PHP:-8.3}
-    restart: unless-stopped
-    volumes:
-      - ./volumes/wordpress:/var/www/html
-    networks:
-      - mariadb
-      - internal
+    extends:
+      file: common-services.yml
+      service: wordpress
     environment:
-    - WORDPRESS_DB_HOST=${WORDPRESS_DB_HOST:-mariadb}
-    - WORDPRESS_DB_NAME=${WORDPRESS_DB_NAME:-wordpress}
-    - WORDPRESS_DB_USER=${WORDPRESS_DB_USER:-root}
-    - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD:-root}
-    - XDEBUG_CONFIG=${XDEBUG_CONFIG:-client_host=172.17.0.1 start_with_request=yes}
     - XDEBUG_MODE=${XDEBUG_MODE:-debug}
-    - HOST_UID=${HOST_UID:-1000}
-    - HOST_GID=${HOST_GID:-1000}
 
   nginx:
-    depends_on:
-      - wordpress
-    image: nginx
-    restart: unless-stopped
-    volumes:
-      - ./volumes/wordpress:/var/www/html
-      - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/
-    networks:
-      - reverse-proxy
-      - internal
+    extends:
+      file: common-services.yml
+      service: nginx
     ports:
       - 80:80
-    environment:
-      - DEFAULT_HOST
-      - VIRTUAL_HOST
-      - LETSENCRYPT_HOST
 
   mariadb:
-    build:
-      context: .docker/mariadb
-    volumes:
-      - ./volumes/mariadb/dump:/docker-entrypoint-initdb.d
-      - ./volumes/mariadb/data:/var/lib/mysql
-    restart: always
-    networks:
-      - mariadb
-    environment:
-      - TZ=${TZ:-America/Sao_Paulo}
-      - MARIADB_USER=${MARIADB_USER:-root}
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-root}
-      - MARIADB_DATABASE=${MARIADB_DATABASE:-wordpress}
+    extends:
+      file: common-services.yml
+      service: mariadb
