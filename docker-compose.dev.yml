@@ -1,0 +1,19 @@
+services:
+  wordpress:
+    extends:
+      file: common-services.yml
+      service: wordpress
+    environment:
+    - XDEBUG_MODE=${XDEBUG_MODE:-debug}
+
+  nginx:
+    extends:
+      file: common-services.yml
+      service: nginx
+    ports:
+      - 80:80
+
+  mariadb:
+    extends:
+      file: common-services.yml
+      service: mariadb
