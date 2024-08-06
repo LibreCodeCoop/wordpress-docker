@@ -11,7 +11,6 @@ After clone:
 
 ```bash
 docker compose build
-docker network create reverse-proxy
 docker network create mariadb
 docker compose up -d
 ```
