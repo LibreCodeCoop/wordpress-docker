@@ -3,12 +3,17 @@ services:
     extends:
       file: common-services.yml
       service: wordpress
+    environment:
+    - XDEBUG_MODE=${XDEBUG_MODE:-debug}
 
   nginx:
     extends:
       file: common-services.yml
       service: nginx
-    environment:
-      - DEFAULT_HOST
-      - VIRTUAL_HOST
-      - LETSENCRYPT_HOST
+    ports:
+      - 80:80
+
+  mariadb:
+    extends:
+      file: common-services.yml
+      service: mariadb
