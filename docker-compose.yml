@@ -1,25 +1,13 @@
-networks:
-  reverse-proxy:
-    external: true
-    name: reverse-proxy
-  internal:
-    driver: bridge
-
 services:
   wordpress:
     extends:
       file: common-services.yml
       service: wordpress
-    networks:
-      - internal
 
   nginx:
     extends:
       file: common-services.yml
       service: nginx
-    networks:
-      - reverse-proxy
-      - internal
     environment:
       - DEFAULT_HOST
       - VIRTUAL_HOST
