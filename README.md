@@ -31,6 +31,7 @@ docker compose exec --user www-data wordpress wp core update-db
 docker compose exec --user www-data wordpress wp plugin update --all
 docker compose exec --user www-data wordpress wp language core update
 docker compose exec --user www-data wordpress wp language plugin update --all
+docker compose exec --user www-data wordpress wp theme update --all
 ```
 
 * [Ambiente de desenvolvimento](docs/ambiente-dev-local.md)
