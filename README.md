@@ -17,9 +17,9 @@ docker compose up -d
 ### Development
 
 ```bash
-wp search-replace --all-tables --report-changed-only <domain-without-protocol> localhost
-wp search-replace --all-tables --report-changed-only https://localhost http://localhost
-wp user reset-password <username> --show-password --skip-email
+docker compose exec --user www-data wordpress wp search-replace --all-tables --report-changed-only <domain-without-protocol> localhost
+docker compose exec --user www-data wordpress wp search-replace --all-tables --report-changed-only https://localhost http://localhost
+docker compose exec --user www-data wordpress wp user reset-password <username> --show-password --skip-email
 ```
 
 ## Update
