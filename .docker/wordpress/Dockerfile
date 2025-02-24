@@ -19,6 +19,8 @@ RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
 RUN chmod +x /usr/bin/wp
 RUN wp --info
 
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+
 COPY config/php.ini /usr/local/etc/php/conf.d/
 
 COPY entrypoint.sh /var/www/scripts/entrypoint.sh
