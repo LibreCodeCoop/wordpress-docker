@@ -34,8 +34,6 @@ services:
       - LETSENCRYPT_HOST
 
   mariadb:
-    profiles:
-      - dev
     build:
       context: .docker/mariadb
     volumes:
