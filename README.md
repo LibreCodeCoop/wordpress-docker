@@ -10,7 +10,6 @@
 After clone:
 
 ```bash
-docker compose build
 docker compose up -d
 ```
 
@@ -23,8 +22,14 @@ services:
   wordpress:
     environment:
       XDEBUG_MODE: ${XDEBUG_MODE:-debug}
+      # Production base URL used for automatic search-replace in the database.
+      # Set this only when importing a production dump and needing URL remap.
       PROD_SITE_URL: ${PROD_SITE_URL:-}
+      # Local URL that replaces PROD_SITE_URL during startup synchronization.
+      # Keep as localhost for local development, or change if you use another host.
       LOCAL_SITE_URL: ${LOCAL_SITE_URL:-http://localhost}
+      # Inline YAML config for automatic plugin/theme installation.
+      # Use wordpress_org_plugins, wordpress_archive_plugins, wordpress_custom_plugins, and wordpress_custom_themes.
       WORDPRESS_SETUP_CONFIG_YAML: |
         wordpress_org_plugins:
           - advanced-custom-fields
@@ -37,7 +42,7 @@ services:
 
   nginx:
     ports:
-      - 80:80
+      - 127.0.0.1:80:80
 
   mariadb:
     extends:
@@ -54,20 +59,7 @@ After that, start the stack with the standard Compose command:
 
 ```bash
 docker compose up -d --build
-docker compose exec --user www-data wordpress wp search-replace --all-tables --report-changed-only <domain-without-protocol> localhost
-docker compose exec --user www-data wordpress wp search-replace --all-tables --report-changed-only https://localhost http://localhost
 docker compose exec --user www-data wordpress wp user reset-password <username> --show-password --skip-email
-```
-
-## Update
-
-```bash
-docker compose exec --user www-data wordpress wp core update
-docker compose exec --user www-data wordpress wp core update-db
-docker compose exec --user www-data wordpress wp plugin update --all
-docker compose exec --user www-data wordpress wp language core update
-docker compose exec --user www-data wordpress wp language plugin update --all
-docker compose exec --user www-data wordpress wp theme update --all
 ```
 
 ## Checking if have files changed at core
