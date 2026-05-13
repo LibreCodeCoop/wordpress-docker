@@ -15,6 +15,7 @@ services:
       - WORDPRESS_DB_USER=${WORDPRESS_DB_USER:-root}
       - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD:-root}
       - WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:-wp_}
+      - WORDPRESS_SETUP_CONFIG_YAML=${WORDPRESS_SETUP_CONFIG_YAML:-}
       - XDEBUG_CONFIG=${XDEBUG_CONFIG:-client_host=host.docker.internal start_with_request=yes}
       - XDEBUG_MODE=${XDEBUG_MODE:-off}
       - HOST_UID=${HOST_UID:-1000}
