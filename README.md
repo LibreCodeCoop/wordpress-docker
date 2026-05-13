@@ -16,7 +16,39 @@ docker compose up -d
 
 ### Development
 
+Create a local file named `docker-compose.override.yml` in the project root with this content:
+
+```yaml
+services:
+  wordpress:
+    extends:
+      file: common-services.yml
+      service: wordpress
+    environment:
+      - XDEBUG_MODE=${XDEBUG_MODE:-debug}
+
+  nginx:
+    extends:
+      file: common-services.yml
+      service: nginx
+    ports:
+      - 80:80
+
+  mariadb:
+    extends:
+      file: common-services.yml
+      service: mariadb
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - 127.0.0.1:${MAILPIT_PORT:-8025}:8025
+```
+
+After that, start the stack with the standard Compose command:
+
 ```bash
+docker compose up -d --build
 docker compose exec --user www-data wordpress wp search-replace --all-tables --report-changed-only <domain-without-protocol> localhost
 docker compose exec --user www-data wordpress wp search-replace --all-tables --report-changed-only https://localhost http://localhost
 docker compose exec --user www-data wordpress wp user reset-password <username> --show-password --skip-email
