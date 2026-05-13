@@ -32,6 +32,7 @@ services:
       - DEFAULT_HOST
       - VIRTUAL_HOST
       - LETSENCRYPT_HOST
+      - LETSENCRYPT_EMAIL
 
   mariadb:
     build:
