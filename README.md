@@ -21,16 +21,10 @@ Create a local file named `docker-compose.override.yml` in the project root with
 ```yaml
 services:
   wordpress:
-    extends:
-      file: common-services.yml
-      service: wordpress
     environment:
       - XDEBUG_MODE=${XDEBUG_MODE:-debug}
 
   nginx:
-    extends:
-      file: common-services.yml
-      service: nginx
     ports:
       - 80:80
 
@@ -64,9 +58,6 @@ docker compose exec --user www-data wordpress wp language core update
 docker compose exec --user www-data wordpress wp language plugin update --all
 docker compose exec --user www-data wordpress wp theme update --all
 ```
-
-* [Ambiente de desenvolvimento](docs/ambiente-dev-local.md)
-* [Atualização de versão de WordPress e plugins](docs/atualizacao.md)
 
 ## Checking if have files changed at core
 
