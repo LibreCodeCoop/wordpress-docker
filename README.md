@@ -22,7 +22,18 @@ Create a local file named `docker-compose.override.yml` in the project root with
 services:
   wordpress:
     environment:
-      - XDEBUG_MODE=${XDEBUG_MODE:-debug}
+      XDEBUG_MODE: ${XDEBUG_MODE:-debug}
+      PROD_SITE_URL: ${PROD_SITE_URL:-}
+      LOCAL_SITE_URL: ${LOCAL_SITE_URL:-http://localhost}
+      WORDPRESS_SETUP_CONFIG_YAML: |
+        wordpress_org_plugins:
+          - advanced-custom-fields
+        wordpress_custom_plugins:
+          - slug: my-plugin
+            source: https://github.com/org/my-plugin.git
+        wordpress_custom_themes:
+          - slug: my-theme
+            source: https://github.com/org/my-theme.git
 
   nginx:
     ports:

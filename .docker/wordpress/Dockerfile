@@ -5,7 +5,10 @@ FROM wordpress:${VERSION_WORDPRESS}-php${VERSION_PHP}-fpm
 RUN apt-get update
 RUN apt-get install -y \
     rsync \
-    less
+    less \
+    git \
+    jq \
+    yq
 
 # Install PHP Extensions
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
