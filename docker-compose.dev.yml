@@ -18,7 +18,7 @@ services:
       file: common-services.yml
       service: mariadb
 
-  mailhog:
-    image: blueimp/mailhog
+  mailpit:
+    image: axllent/mailpit
     ports:
-      - 127.0.0.1:${MAILHOG_PORT:-8025}:8025
+      - 127.0.0.1:${MAILPIT_PORT:-8025}:8025
