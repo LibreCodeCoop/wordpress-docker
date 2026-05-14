@@ -17,7 +17,7 @@ chown -R www-data:www-data /var/www/html
 
 if [ ! -f "/var/www/html/wp-config.php" ]; then
 	echo "wp-config.php not found. Generating configuration..."
-	wp --allow-root config create \
+	runuser -u www-data -- wp config create \
 		--path=/var/www/html \
 		--dbname="${WORDPRESS_DB_NAME}" \
 		--dbuser="${WORDPRESS_DB_USER}" \
@@ -30,7 +30,7 @@ if [ ! -f "/var/www/html/wp-config.php" ]; then
 fi
 
 wordpress_is_installed() {
-	wp --allow-root core is-installed 2>/dev/null
+	runuser -u www-data -- wp core is-installed 2>/dev/null
 }
 
 trim_value() {
@@ -100,7 +100,7 @@ replace_url_occurrences() {
 		return
 	fi
 
-	if ! wp --allow-root search-replace "${old_value}" "${new_value}" --all-tables --report-changed-only; then
+	if ! runuser -u www-data -- wp search-replace "${old_value}" "${new_value}" --all-tables --report-changed-only; then
 		echo "  ⚠ Failed to replace '${old_value}' with '${new_value}'"
 	fi
 }
@@ -130,11 +130,11 @@ sync_site_urls() {
 install_plugin() {
 	local plugin_slug="$1"
 
-	if wp --allow-root plugin is-installed "$plugin_slug" 2>/dev/null; then
+	if runuser -u www-data -- wp plugin is-installed "$plugin_slug" 2>/dev/null; then
 		echo "  ✓ Plugin $plugin_slug is already installed"
 	else
 		echo "  ↓ Installing $plugin_slug..."
-		if wp --allow-root plugin install "$plugin_slug" --activate 2>/dev/null; then
+		if runuser -u www-data -- wp plugin install "$plugin_slug" --activate 2>/dev/null; then
 			echo "  ✓ Plugin $plugin_slug installed"
 		else
 			echo "  ✗ Failed to install $plugin_slug"
@@ -146,11 +146,11 @@ install_plugin_archive() {
 	local plugin_slug="$1"
 	local archive_source="$2"
 
-	if wp --allow-root plugin is-installed "$plugin_slug" 2>/dev/null; then
+	if runuser -u www-data -- wp plugin is-installed "$plugin_slug" 2>/dev/null; then
 		echo "  ✓ Plugin $plugin_slug is already installed"
 	else
 		echo "  ↓ Installing $plugin_slug from archive..."
-		if wp --allow-root plugin install "$archive_source" --activate 2>/dev/null; then
+		if runuser -u www-data -- wp plugin install "$archive_source" --activate 2>/dev/null; then
 			echo "  ✓ Plugin $plugin_slug installed"
 		else
 			echo "  ✗ Failed to install $plugin_slug from archive"
@@ -206,7 +206,7 @@ finalize_custom_plugin() {
 
 	run_custom_plugin_post_install_commands "$plugin_name" "$entry"
 	chown -R www-data:www-data "$plugin_dir"
-	wp --allow-root plugin activate "$plugin_name" 2>/dev/null || true
+	runuser -u www-data -- wp plugin activate "$plugin_name" 2>/dev/null || true
 }
 
 clone_custom_theme() {
