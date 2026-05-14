@@ -52,7 +52,7 @@ services:
           - slug: my-plugin-with-fixup
             source: https://github.com/org/my-plugin-with-fixup.git
             post_install_commands:
-              - ln -sfn real-dir "$PLUGIN_DIR/expected-dir"
+              - ln -sfn real-dir "$$PLUGIN_DIR/expected-dir"
               - wp --allow-root option update my_plugin_option value
 
         # Themes cloned from a Git repository.
