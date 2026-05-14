@@ -37,6 +37,17 @@ trim_value() {
 	echo "$1" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'
 }
 
+is_truthy() {
+	case "$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+		1|true|yes|on)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 plugins_config_exists() {
 	[ -n "$(trim_value "${WORDPRESS_SETUP_CONFIG_YAML:-}")" ]
 }
@@ -125,6 +136,46 @@ sync_site_urls() {
 	replace_url_occurrences "${prod_url}" "${local_url}"
 	replace_url_occurrences "${prod_url}/" "${local_url}/"
 	replace_url_occurrences "${prod_host}" "${local_host}"
+}
+
+reset_local_user_passwords() {
+	local reset_all_users="${WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS:-0}"
+	local target_user
+	local shared_password="${WORDPRESS_LOCAL_USERS_PASSWORD:-}"
+	local user_id
+
+	target_user="$(trim_value "${WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER:-}")"
+
+	if [ -z "$shared_password" ]; then
+		echo "WORDPRESS_LOCAL_USERS_PASSWORD not set; skipping local user password reset."
+		return
+	fi
+
+	if is_truthy "$reset_all_users"; then
+		echo "Resetting password for all local WordPress users..."
+		while IFS= read -r user_id; do
+			user_id="$(trim_value "$user_id")"
+			if [ -z "$user_id" ]; then
+				continue
+			fi
+			runuser -u www-data -- wp user update "$user_id" --user_pass="$shared_password" >/dev/null
+		done < <(runuser -u www-data -- wp user list --field=ID)
+		echo "  ✓ Password reset completed for all users"
+		return
+	fi
+
+	if [ -n "$target_user" ]; then
+		echo "Resetting password for local WordPress user '$target_user'..."
+		if runuser -u www-data -- wp user get "$target_user" --field=ID >/dev/null 2>&1; then
+			runuser -u www-data -- wp user update "$target_user" --user_pass="$shared_password" >/dev/null
+			echo "  ✓ Password reset completed for user '$target_user'"
+		else
+			echo "  ⚠ User '$target_user' not found; skipping password reset"
+		fi
+		return
+	fi
+
+	echo "No local password reset target configured; set WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS=1 or WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER."
 }
 
 install_plugin() {
@@ -312,6 +363,7 @@ echo "Installing plugins and themes..."
 
 if wordpress_is_installed; then
 	sync_site_urls
+	reset_local_user_passwords
 
 	if plugins_config_exists; then
 		install_org_plugins_from_config

@@ -38,6 +38,13 @@ services:
       # Local URL that replaces PROD_SITE_URL during startup synchronization.
       # Keep as localhost for local development, or change if you use another host.
       LOCAL_SITE_URL: ${LOCAL_SITE_URL:-http://localhost}
+      # Local-only password override for imported users (do not use in production).
+      # Set one shared password and choose one strategy:
+      # - reset all local users, or
+      # - reset only one specific user login/email/ID.
+      WORDPRESS_LOCAL_USERS_PASSWORD: ${WORDPRESS_LOCAL_USERS_PASSWORD:-localdev123}
+      WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS: ${WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS:-1}
+      WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER: ${WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER:-}
       # Inline YAML config for automatic plugin/theme installation.
       # Use wordpress_org_plugins, wordpress_archive_plugins, wordpress_custom_plugins, and wordpress_custom_themes.
       WORDPRESS_SETUP_CONFIG_YAML: |
@@ -89,8 +96,13 @@ After that, start the stack with the standard Compose command:
 
 ```bash
 docker compose up -d --build
-docker compose exec --user www-data wordpress wp user reset-password <username> --show-password --skip-email
 ```
+
+On each startup (when WordPress is already installed), the entrypoint can automatically reset local user passwords:
+- `WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS=1`: reset all users to `WORDPRESS_LOCAL_USERS_PASSWORD`.
+- `WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER=<login|email|id>`: reset only one user.
+
+Use only one strategy at a time. For local environments importing production data, resetting all users is usually the simplest approach.
 
 ### Database dump
 
