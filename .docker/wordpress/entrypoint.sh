@@ -140,9 +140,11 @@ sync_site_urls() {
 
 reset_local_user_passwords() {
 	local reset_all_users="${WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS:-0}"
-	local target_user="$(trim_value "${WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER:-}")"
+	local target_user
 	local shared_password="${WORDPRESS_LOCAL_USERS_PASSWORD:-}"
 	local user_id
+
+	target_user="$(trim_value "${WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER:-}")"
 
 	if [ -z "$shared_password" ]; then
 		echo "WORDPRESS_LOCAL_USERS_PASSWORD not set; skipping local user password reset."
