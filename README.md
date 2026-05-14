@@ -1,5 +1,19 @@
 # Wordpress
 
+## About this project
+
+This repository provides a reproducible Docker environment for running a WordPress stack used by LibreSign and related integrations.
+
+The main goal is to make local development, onboarding, and environment recovery fast and predictable, without manual server setup.
+
+It is useful when you need to:
+- Run WordPress with MariaDB and Nginx in a consistent way across machines.
+- Import production-like data and remap URLs for local usage.
+- Install plugins and themes automatically, including custom Git repositories.
+- Configure local integrations (for example SMTP with mailpit, or other plugin-specific settings) during startup.
+
+In short, this project reduces setup friction and keeps local behavior close to real deployment scenarios.
+
 [It will be necessary to have the docker installed in its operating system to execute this project.](https://docs.docker.com/get-docker/)
 
 
