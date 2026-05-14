@@ -195,10 +195,7 @@ run_custom_plugin_post_install_commands() {
 			continue
 		fi
 
-		(
-			cd /var/www/html
-			bash -lc "export PLUGIN_DIR='$plugin_dir'; $command"
-		)
+		runuser -u www-data -- bash -lc "cd /var/www/html && export PLUGIN_DIR='$plugin_dir'; $command"
 	done < <(printf '%s' "$entry" | base64 -d | yq -r '.post_install_commands[]?')
 }
 

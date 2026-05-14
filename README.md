@@ -54,7 +54,7 @@ services:
         # Plugins cloned from a Git repository.
         # Optional: post_install_commands — list of shell commands run after cloning
         # (and on every container start if the plugin directory already exists).
-        # Commands run from the WordPress root (/var/www/html) with --allow-root.
+        # Commands run as www-data from the WordPress root (/var/www/html).
         # The env var PLUGIN_DIR is set to the absolute plugin directory path.
         wordpress_custom_plugins:
           - slug: my-plugin
@@ -63,7 +63,7 @@ services:
             source: https://github.com/org/my-plugin-with-fixup.git
             post_install_commands:
               - ln -sfn real-dir "$$PLUGIN_DIR/expected-dir"
-              - wp --allow-root option update my_plugin_option value
+              - wp option update my_plugin_option value
 
         # Themes cloned from a Git repository.
         wordpress_custom_themes:
@@ -120,10 +120,10 @@ To route WordPress mail through mailpit, install the [wp-simple-smtp](https://gi
 - slug: wp-simple-smtp
   source: https://github.com/LibreCodeCoop/wp-simple-smtp.git
   post_install_commands:
-    - wp --allow-root option update smtp_host mailpit
-    - wp --allow-root option update smtp_port 1025
-    - wp --allow-root option update smtp_auth 0
-    - wp --allow-root option update smtp_secure ''
+    - wp option update smtp_host mailpit
+    - wp option update smtp_port 1025
+    - wp option update smtp_auth 0
+    - wp option update smtp_secure ''
 ```
 
 mailpit's SMTP port inside the Docker network is **1025**; the web UI is exposed on host port **8025**.
