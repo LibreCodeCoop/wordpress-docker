@@ -165,17 +165,51 @@ clone_custom_plugin() {
 
 	if [ -d "$plugin_dir" ]; then
 		echo "  ✓ Plugin $plugin_name already exists"
+		return 0
 	else
 		echo "  ↓ Cloning $plugin_name..."
 		cd /var/www/html/wp-content/plugins/
 		if git clone "$git_url" "$plugin_name" 2>/dev/null; then
-			chown -R www-data:www-data "$plugin_dir"
-			wp --allow-root plugin activate "$plugin_name" 2>/dev/null || true
 			echo "  ✓ Plugin $plugin_name cloned"
+			return 0
 		else
 			echo "  ✗ Failed to clone $plugin_name"
+			return 1
 		fi
 	fi
+}
+
+run_custom_plugin_post_install_commands() {
+	local plugin_name="$1"
+	local entry="$2"
+	local plugin_dir="/var/www/html/wp-content/plugins/$plugin_name"
+	local command
+
+	if ! printf '%s' "$entry" | base64 -d | yq -e '.post_install_commands? | length > 0' - >/dev/null 2>&1; then
+		return 0
+	fi
+
+	while IFS= read -r command; do
+		command="$(trim_value "$command")"
+		if [ -z "$command" ] || [ "$command" = "null" ]; then
+			continue
+		fi
+
+		(
+			cd "$plugin_dir"
+			bash -lc "$command"
+		)
+	done < <(printf '%s' "$entry" | base64 -d | yq -r '.post_install_commands[]?')
+}
+
+finalize_custom_plugin() {
+	local plugin_name="$1"
+	local entry="$2"
+	local plugin_dir="/var/www/html/wp-content/plugins/$plugin_name"
+
+	run_custom_plugin_post_install_commands "$plugin_name" "$entry"
+	chown -R www-data:www-data "$plugin_dir"
+	wp --allow-root plugin activate "$plugin_name" 2>/dev/null || true
 }
 
 clone_custom_theme() {
@@ -266,7 +300,9 @@ install_git_entries() {
 		fi
 
 		if [ "$entry_type" = "plugin" ]; then
-			clone_custom_plugin "$resource_name" "$source_url"
+			if clone_custom_plugin "$resource_name" "$source_url"; then
+				finalize_custom_plugin "$resource_name" "$entry"
+			fi
 		else
 			clone_custom_theme "$resource_name" "$source_url"
 		fi
