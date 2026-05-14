@@ -204,8 +204,8 @@ finalize_custom_plugin() {
 	local entry="$2"
 	local plugin_dir="/var/www/html/wp-content/plugins/$plugin_name"
 
-	run_custom_plugin_post_install_commands "$plugin_name" "$entry"
 	chown -R www-data:www-data "$plugin_dir"
+	run_custom_plugin_post_install_commands "$plugin_name" "$entry"
 	runuser -u www-data -- wp plugin activate "$plugin_name" 2>/dev/null || true
 }
 
