@@ -162,13 +162,27 @@ clone_custom_plugin() {
 	local plugin_name="$1"
 	local git_url="$2"
 	local plugin_dir="/var/www/html/wp-content/plugins/$plugin_name"
+	local acf_dir="$plugin_dir/integrations/ACF"
+	local acf_source_dir="$plugin_dir/integrations/acf"
+
+	fix_polylang_pro_acf_case() {
+		if [ -d "$acf_source_dir" ] && [ ! -e "$acf_dir" ]; then
+			ln -s acf "$acf_dir"
+		fi
+	}
 
 	if [ -d "$plugin_dir" ]; then
 		echo "  ✓ Plugin $plugin_name already exists"
+		if [ "$plugin_name" = "polylang-pro" ]; then
+			fix_polylang_pro_acf_case
+		fi
 	else
 		echo "  ↓ Cloning $plugin_name..."
 		cd /var/www/html/wp-content/plugins/
 		if git clone "$git_url" "$plugin_name" 2>/dev/null; then
+			if [ "$plugin_name" = "polylang-pro" ]; then
+				fix_polylang_pro_acf_case
+			fi
 			chown -R www-data:www-data "$plugin_dir"
 			wp --allow-root plugin activate "$plugin_name" 2>/dev/null || true
 			echo "  ✓ Plugin $plugin_name cloned"
