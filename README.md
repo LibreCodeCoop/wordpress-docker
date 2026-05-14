@@ -1,6 +1,16 @@
 # Wordpress
 
-[It will be necessary to have the docker installed in its operating system to execute this project.](https://docs.docker.com/get-docker/)
+This repository provides a Docker setup to run a WordPress stack with plugins and themes.
+
+The main goal is to make local development, onboarding, and environment recovery quick, without manual server setup.
+
+It is useful when you need to:
+- Run WordPress with MariaDB and Nginx the same way on any machine.
+- Import production-like data and remap URLs for local usage.
+- Install plugins and themes automatically, including custom Git repositories.
+- Configure local integrations (for example SMTP with mailpit, or other plugin-specific settings) during startup.
+
+Prerequisite: [Docker](https://docs.docker.com/get-docker/) must be installed on your operating system.
 
 
 ## Setup
@@ -81,6 +91,24 @@ After that, start the stack with the standard Compose command:
 docker compose up -d --build
 docker compose exec --user www-data wordpress wp user reset-password <username> --show-password --skip-email
 ```
+
+### Database dump
+
+If you need to bootstrap the environment with existing data, place your SQL dump in the folder below:
+
+`volumes/mariadb/dump/`
+
+How it works:
+- Files in this folder are mounted at `/docker-entrypoint-initdb.d` inside MariaDB.
+- They are imported automatically only when the MariaDB data directory is empty (first initialization).
+
+If your database is already initialized and you want to import a dump manually:
+
+```bash
+docker compose exec -T mariadb sh -lc 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"' < volumes/mariadb/dump/your-dump.sql
+```
+
+If you want to force automatic re-import from `/docker-entrypoint-initdb.d`, remove the existing database files in `volumes/mariadb/data` and start the stack again.
 
 ### Local e-mail (mailpit)
 
