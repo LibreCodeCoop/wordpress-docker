@@ -44,7 +44,5 @@ services:
     restart: always
     environment:
       - TZ=${TZ:-America/Sao_Paulo}
-      - MARIADB_USER=${MARIADB_USER:-root}
-      - MARIADB_PASSWORD=${WORDPRESS_DB_PASSWORD:-woocommerce123}
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-root}
       - MARIADB_DATABASE=${MARIADB_DATABASE:-wordpress}
