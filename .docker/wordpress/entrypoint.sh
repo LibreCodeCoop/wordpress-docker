@@ -199,12 +199,15 @@ install_plugin_archive() {
 
 	if runuser -u www-data -- wp plugin is-installed "$plugin_slug" 2>/dev/null; then
 		echo "  ✓ Plugin $plugin_slug is already installed"
+		return 0
 	else
 		echo "  ↓ Installing $plugin_slug from archive..."
-		if runuser -u www-data -- wp plugin install "$archive_source" --activate 2>/dev/null; then
+		if runuser -u www-data -- wp plugin install "$archive_source" 2>/dev/null; then
 			echo "  ✓ Plugin $plugin_slug installed"
+			return 0
 		else
 			echo "  ✗ Failed to install $plugin_slug from archive"
+			return 1
 		fi
 	fi
 }
@@ -319,7 +322,9 @@ install_archive_plugins_from_config() {
 			continue
 		fi
 
-		install_plugin_archive "$plugin_slug" "$archive_source"
+		if install_plugin_archive "$plugin_slug" "$archive_source"; then
+			finalize_custom_plugin "$plugin_slug" "$entry"
+		fi
 	done < <(read_yaml_values '.wordpress_archive_plugins[]? | @base64')
 }
 
