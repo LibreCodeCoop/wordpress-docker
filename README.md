@@ -42,7 +42,7 @@ services:
       # Set one shared password and choose one strategy:
       # - reset all local users, or
       # - reset only one specific user login/email/ID.
-      WORDPRESS_LOCAL_USERS_PASSWORD: ${WORDPRESS_LOCAL_USERS_PASSWORD:-localdev123}
+      WORDPRESS_LOCAL_USERS_PASSWORD: ${WORDPRESS_LOCAL_USERS_PASSWORD:-admin}
       WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS: ${WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS:-1}
       WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER: ${WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER:-}
       # Inline YAML config for automatic plugin/theme installation.
