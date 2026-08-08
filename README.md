@@ -54,6 +54,10 @@ services:
           - woocommerce
 
         # Plugins installed from a .zip URL (e.g. GitHub Releases or S3).
+        # Optional: post_install_commands — list of shell commands run after installing
+        # (and on every container start if the plugin directory already exists).
+        # Commands run as www-data from the WordPress root (/var/www/html).
+        # The env var PLUGIN_DIR is set to the absolute plugin directory path.
         wordpress_archive_plugins:
           - slug: my-premium-plugin
             source: https://example.com/releases/my-premium-plugin-1.0.0.zip
