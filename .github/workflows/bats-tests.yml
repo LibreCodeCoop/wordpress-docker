@@ -12,11 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Bats-core
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes bats shellcheck
+      - name: Setup Bats-core
+        uses: bats-core/bats-action@4.0.0
+        with:
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
       - name: Run Bats tests
         run: bats tests/security
       - name: ShellCheck Bats helpers
-        run: shellcheck tests/security/helpers/*.bash
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: tests/security/helpers
