@@ -5,6 +5,8 @@ nginx_hardening_script="${nginx_hardening_root}/.docker/nginx/docker-entrypoint.
 nginx_hardening_tmp="${BATS_TEST_TMPDIR}/nginx"
 nginx_hardening_container=""
 nginx_hardening_port=""
+nginx_hardening_network=""
+nginx_hardening_php_container=""
 
 setup_nginx_fixture() {
 	mkdir -p "${nginx_hardening_tmp}"
@@ -67,6 +69,60 @@ nginx_hardening_stop() {
 	if [ -n "${nginx_hardening_container}" ]; then
 		docker rm -f "${nginx_hardening_container}" >/dev/null 2>&1 || true
 		nginx_hardening_container=""
+	fi
+}
+
+nginx_hardening_integration_setup() {
+	nginx_hardening_network="xmlrpc-bats-${BATS_TEST_NUMBER:-0}-$$"
+	nginx_hardening_tmp="${BATS_TEST_TMPDIR}/nginx-integration"
+	mkdir -p "${nginx_hardening_tmp}/document-root"
+	printf '%s\n' '<?php echo "PHP_UPSTREAM_REACHED";' > "${nginx_hardening_tmp}/document-root/xmlrpc.php"
+	docker network create "${nginx_hardening_network}" >/dev/null
+
+	nginx_hardening_php_container="$(docker run -d --rm \
+		--network "${nginx_hardening_network}" --network-alias wordpress \
+		-v "${nginx_hardening_tmp}/document-root:/var/www/html:ro" \
+		php:8.3-fpm)"
+}
+
+nginx_hardening_integration_start() {
+	local value="${1-__UNSET__}"
+	local -a environment_args=()
+
+	if [ "${value}" != "__UNSET__" ]; then
+		environment_args=(-e "WORDPRESS_XMLRPC_ENABLED=${value}")
+	fi
+
+	nginx_hardening_container="$(docker run -d --rm "${environment_args[@]}" \
+		--network "${nginx_hardening_network}" \
+		-v "${nginx_hardening_root}/.docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+		-v "${nginx_hardening_script}:/docker-entrypoint.d/40-xmlrpc-hardening.sh:ro" \
+		-v "${nginx_hardening_tmp}/document-root:/var/www/html:ro" \
+		-p 127.0.0.1::80 nginx:latest)"
+
+	nginx_hardening_port="$(docker port "${nginx_hardening_container}" 80/tcp | sed 's/.*://')"
+
+	local attempts=0
+	while ! curl -sS -o /dev/null "http://127.0.0.1:${nginx_hardening_port}/xmlrpc.php" >/dev/null 2>&1; do
+		attempts=$((attempts + 1))
+		if [ "${attempts}" -ge 30 ]; then
+			nginx_hardening_logs
+			docker logs "${nginx_hardening_php_container}" >&2 || true
+			return 1
+		fi
+		sleep 1
+	done
+}
+
+nginx_hardening_integration_stop() {
+	nginx_hardening_stop
+	if [ -n "${nginx_hardening_php_container}" ]; then
+		docker rm -f "${nginx_hardening_php_container}" >/dev/null 2>&1 || true
+		nginx_hardening_php_container=""
+	fi
+	if [ -n "${nginx_hardening_network}" ]; then
+		docker network rm "${nginx_hardening_network}" >/dev/null 2>&1 || true
+		nginx_hardening_network=""
 	fi
 }
 
