@@ -12,6 +12,31 @@ It is useful when you need to:
 
 Prerequisite: [Docker](https://docs.docker.com/get-docker/) must be installed on your operating system.
 
+## Security / Hardening
+
+The nginx service preserves the upstream WordPress XML-RPC capability by default.
+Set `WORDPRESS_XMLRPC_ENABLED=0` in a hardened deployment to block both GET and
+POST requests to `/xmlrpc.php` before they reach PHP-FPM. Set it to `1` (or
+`true`, `yes`, or `on`) to preserve XML-RPC. The values `0`, `false`, `no`, and
+`off` disable it; any other value fails nginx startup with an error.
+
+The XML-RPC policy is applied by the standard nginx `/docker-entrypoint.d/`
+lifecycle. The image's original entrypoint and command are preserved. This
+repository does not install a MU-plugin or remove XML-RPC methods globally.
+
+The nginx configuration also blocks PHP execution in `wp-content/uploads`;
+normal media files remain accessible. This is an HTTP-layer control and does
+not replace filesystem isolation in production.
+
+Run the functional regression tests with:
+
+```sh
+./tests/security/test-xmlrpc-nginx.sh
+```
+
+The test covers an unset variable, both explicit policies, GET and POST blocking,
+upstream reachability when enabled, and startup failure for invalid values.
+
 
 ## Setup
 
