@@ -1,0 +1,27 @@
+name: Bats tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  bats-tests:
+    name: Bats infrastructure tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bats-core
+        uses: bats-core/bats-action@4.0.0
+        with:
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+      - name: Run Bats tests
+        run: bats tests/security
+      - name: ShellCheck Bats helpers
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: tests/security/helpers
