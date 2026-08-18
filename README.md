@@ -81,6 +81,9 @@ services:
             source: https://github.com/org/my-theme.git
 
   nginx:
+    environment:
+      # Hardened deployment example: block XML-RPC before PHP-FPM.
+      WORDPRESS_XMLRPC_ENABLED: ${WORDPRESS_XMLRPC_ENABLED:-0}
     ports:
       - 127.0.0.1:80:80
 
