@@ -32,11 +32,14 @@ services:
     volumes:
       - ./volumes/wordpress:/var/www/html:ro
       - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./.docker/nginx/docker-entrypoint.d/40-xmlrpc-hardening.sh:/tmp/40-xmlrpc-hardening.sh:ro
+    command: ["/bin/sh", "-c", ". /tmp/40-xmlrpc-hardening.sh && exec nginx -g 'daemon off;'"]
     environment:
       - DEFAULT_HOST
       - VIRTUAL_HOST
       - LETSENCRYPT_HOST
       - LETSENCRYPT_EMAIL
+      - WORDPRESS_XMLRPC_ENABLED=${WORDPRESS_XMLRPC_ENABLED:-0}
 
   mariadb:
     build:
