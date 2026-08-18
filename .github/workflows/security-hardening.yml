@@ -1,0 +1,16 @@
+name: Security hardening
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  nginx-hardening:
+    name: Nginx XML-RPC policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run XML-RPC nginx tests
+        run: ./tests/security/test-xmlrpc-nginx.sh
