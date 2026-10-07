@@ -85,6 +85,14 @@ nginx_hardening_integration_setup() {
 		php:8.3-fpm)"
 }
 
+nginx_hardening_server_snippet() {
+	local name="$1"
+	local content="$2"
+
+	mkdir -p "${nginx_hardening_tmp}/server.d"
+	printf '%s\n' "${content}" > "${nginx_hardening_tmp}/server.d/${name}"
+}
+
 nginx_hardening_integration_start() {
 	local value="${1-__UNSET__}"
 	local -a environment_args=()
@@ -93,11 +101,17 @@ nginx_hardening_integration_start() {
 		environment_args=(-e "WORDPRESS_XMLRPC_ENABLED=${value}")
 	fi
 
+	local -a server_snippets_args=()
+	if [ -d "${nginx_hardening_tmp}/server.d" ]; then
+		server_snippets_args=(-v "${nginx_hardening_tmp}/server.d:/etc/nginx/server.d:ro")
+	fi
+
 	nginx_hardening_container="$(docker run -d --rm "${environment_args[@]}" \
 		--network "${nginx_hardening_network}" \
 		-v "${nginx_hardening_root}/.docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro" \
 		-v "${nginx_hardening_script}:/docker-entrypoint.d/40-xmlrpc-hardening.sh:ro" \
 		-v "${nginx_hardening_tmp}/document-root:/var/www/html:ro" \
+		"${server_snippets_args[@]}" \
 		-p 127.0.0.1::80 nginx:latest)"
 
 	nginx_hardening_port="$(docker port "${nginx_hardening_container}" 80/tcp | sed 's/.*://')"
@@ -136,9 +150,15 @@ nginx_hardening_config_is_valid() {
 nginx_hardening_request() {
 	local method="$1"
 	local path="$2"
+	local request_body_file="${3:-}"
 	local body_file="${nginx_hardening_tmp}/response-body"
+	local -a data_args=()
 
-	curl -sS -X "${method}" -o "${body_file}" -w '%{http_code}' \
+	if [ -n "${request_body_file}" ]; then
+		data_args=(--data-binary "@${request_body_file}")
+	fi
+
+	curl -sS -X "${method}" "${data_args[@]}" -o "${body_file}" -w '%{http_code}' \
 		"http://127.0.0.1:${nginx_hardening_port}${path}"
 }
 
