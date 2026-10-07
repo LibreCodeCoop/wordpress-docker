@@ -85,6 +85,15 @@ nginx_hardening_integration_setup() {
 		php:8.3-fpm)"
 }
 
+nginx_hardening_document_root_file() {
+	local path="$1"
+	local content="$2"
+	local file="${nginx_hardening_tmp}/document-root/${path}"
+
+	mkdir -p "$(dirname "${file}")"
+	printf '%s\n' "${content}" > "${file}"
+}
+
 nginx_hardening_integration_start() {
 	local value="${1-__UNSET__}"
 	local -a environment_args=()
