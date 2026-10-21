@@ -54,6 +54,7 @@ jobs:
           context: .docker/wordpress
           file: .docker/wordpress/Dockerfile
           platforms: linux/amd64,linux/arm64
+          pull: true
           push: false
           build-args: |
             VERSION_WORDPRESS=${{ env.VERSION_WORDPRESS }}
@@ -70,6 +71,7 @@ jobs:
           context: .docker/wordpress
           file: .docker/wordpress/Dockerfile
           platforms: linux/amd64,linux/arm64
+          pull: true
           push: true
           build-args: |
             VERSION_WORDPRESS=${{ env.VERSION_WORDPRESS }}
