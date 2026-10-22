@@ -1,6 +1,0 @@
-version: 2
-updates:
-  - package-ecosystem: docker
-    directory: /.docker/wordpress
-    schedule:
-      interval: daily
