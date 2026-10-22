@@ -12,13 +12,6 @@ It is useful when you need to:
 
 Prerequisite: [Docker](https://docs.docker.com/get-docker/) must be installed on your operating system.
 
-## Base image updates
-
-Renovate opens PRs for the default WordPress image's version and digest in
-`.github/workflows/docker-publish.yml`. Builds use that immutable image by
-default. For another version, supply `wordpress_base_image` to the manual
-workflow or use `VERSION_WORDPRESS` and `VERSION_PHP` as local Docker build args.
-
 ## Setup
 
 ### Production
