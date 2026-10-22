@@ -4,6 +4,7 @@
     "custom.regex"
   ],
   "dependencyDashboard": false,
+  "separateMinorPatch": true,
   "customManagers": [
     {
       "customType": "regex",
@@ -11,12 +12,11 @@
         "/^\\.github\\/workflows\\/docker-publish\\.yml$/"
       ],
       "matchStrings": [
-        "VERSION_WORDPRESS:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+        "WORDPRESS_BASE_IMAGE: wordpress:(?<currentValue>\\d+\\.\\d+\\.\\d+-php\\d+\\.\\d+-fpm)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker",
       "depNameTemplate": "wordpress",
-      "versioningTemplate": "semver-coerced",
-      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)$"
+      "versioningTemplate": "docker"
     }
   ],
   "packageRules": [
