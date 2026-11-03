@@ -110,6 +110,20 @@ On each startup (when WordPress is already installed), the entrypoint can automa
 
 Use only one strategy at a time. For local environments importing production data, resetting all users is usually the simplest approach.
 
+### Nginx server snippets
+
+Every `*.conf` file mounted at `/etc/nginx/server.d/` is included at the end of the `server` block, so an environment can tune nginx without replacing `default.conf`:
+
+```yaml
+  nginx:
+    volumes:
+      - ./nginx/client-max-body-size.conf:/etc/nginx/server.d/client-max-body-size.conf:ro
+```
+
+```nginx
+client_max_body_size 0;
+```
+
 ### Database dump
 
 If you need to bootstrap the environment with existing data, place your SQL dump in the folder below:
