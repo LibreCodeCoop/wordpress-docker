@@ -50,9 +50,11 @@ services:
       # Use wordpress_org_plugins, wordpress_archive_plugins, wordpress_custom_plugins, and wordpress_custom_themes.
       WORDPRESS_SETUP_CONFIG_YAML: |
         # Plugins installed directly from the WordPress.org repository.
+        # Use a mapping with version to pin a release.
         wordpress_org_plugins:
           - advanced-custom-fields
-          - woocommerce
+          - slug: woocommerce
+            version: 10.3.0
 
         # Plugins installed from a .zip URL (e.g. GitHub Releases or S3).
         # Optional: post_install_commands — list of shell commands run after installing
@@ -62,15 +64,19 @@ services:
         wordpress_archive_plugins:
           - slug: my-premium-plugin
             source: https://example.com/releases/my-premium-plugin-1.0.0.zip
+            # Optional: the archive is only installed when it matches this checksum.
+            sha256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
         # Plugins cloned from a Git repository.
         # Optional: post_install_commands — list of shell commands run after cloning
         # (and on every container start if the plugin directory already exists).
         # Commands run as www-data from the WordPress root (/var/www/html).
         # The env var PLUGIN_DIR is set to the absolute plugin directory path.
+        # Optional: ref pins a tag or a full commit SHA. A plugin whose commit does not match is not activated.
         wordpress_custom_plugins:
           - slug: my-plugin
             source: https://github.com/org/my-plugin.git
+            ref: v1.2.0
           - slug: my-plugin-with-fixup
             source: https://github.com/org/my-plugin-with-fixup.git
             post_install_commands:
@@ -81,6 +87,7 @@ services:
         wordpress_custom_themes:
           - slug: my-theme
             source: https://github.com/org/my-theme.git
+            ref: 0123456789abcdef0123456789abcdef01234567
 
   nginx:
     environment:
@@ -99,6 +106,8 @@ services:
     ports:
       - 127.0.0.1:${MAILPIT_PORT:-8025}:8025
 ```
+
+Entries without `version`, `sha256` or `ref` install whatever the source serves at that moment and are reported in the log. Set `WORDPRESS_SETUP_REQUIRE_PINNED=1` to skip them instead.
 
 After that, start the stack with the standard Compose command:
 

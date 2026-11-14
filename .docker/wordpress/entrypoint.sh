@@ -199,56 +199,156 @@ reset_local_user_passwords() {
 	echo "No local password reset target configured; set WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS=1 or WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER."
 }
 
+allow_unpinned_entry() {
+	local resource_label="$1"
+
+	if is_truthy "${WORDPRESS_SETUP_REQUIRE_PINNED:-0}"; then
+		echo "  ✗ $resource_label has no pin and WORDPRESS_SETUP_REQUIRE_PINNED is enabled; skipping"
+		return 1
+	fi
+
+	echo "  ⚠ $resource_label has no pin; using the latest version"
+	return 0
+}
+
 install_plugin() {
 	local plugin_slug="$1"
+	local plugin_version="$2"
+	local installed_version
+	local -a version_args=()
+
+	if [ -z "$plugin_version" ]; then
+		allow_unpinned_entry "Plugin $plugin_slug" || return 0
+	else
+		version_args=(--version="$plugin_version" --force)
+	fi
 
 	if runuser -u www-data -- wp plugin is-installed "$plugin_slug" 2>/dev/null; then
-		echo "  ✓ Plugin $plugin_slug is already installed"
+		installed_version="$(runuser -u www-data -- wp plugin get "$plugin_slug" --field=version 2>/dev/null)"
+		if [ -z "$plugin_version" ] || [ "$installed_version" = "$plugin_version" ]; then
+			echo "  ✓ Plugin $plugin_slug is already installed"
+			return 0
+		fi
+		echo "  ↻ Updating $plugin_slug to $plugin_version..."
 	else
 		echo "  ↓ Installing $plugin_slug..."
-		if runuser -u www-data -- wp plugin install "$plugin_slug" --activate 2>/dev/null; then
-			echo "  ✓ Plugin $plugin_slug installed"
-		else
-			echo "  ✗ Failed to install $plugin_slug"
-		fi
+	fi
+
+	if runuser -u www-data -- wp plugin install "$plugin_slug" "${version_args[@]}" --activate 2>/dev/null; then
+		echo "  ✓ Plugin $plugin_slug installed"
+	else
+		echo "  ✗ Failed to install $plugin_slug"
 	fi
 }
 
 install_plugin_archive() {
 	local plugin_slug="$1"
 	local archive_source="$2"
+	local archive_sha256="$3"
+	local download_dir
+	local archive_file
+
+	if [ -z "$archive_sha256" ]; then
+		allow_unpinned_entry "Plugin $plugin_slug" || return 0
+	fi
 
 	if runuser -u www-data -- wp plugin is-installed "$plugin_slug" 2>/dev/null; then
 		echo "  ✓ Plugin $plugin_slug is already installed"
+		return 0
+	fi
+
+	echo "  ↓ Installing $plugin_slug from archive..."
+	if [ -n "$archive_sha256" ]; then
+		download_dir="$(mktemp -d)"
+		archive_file="$download_dir/$plugin_slug.zip"
+		if ! curl -fsSL "$archive_source" -o "$archive_file"; then
+			echo "  ✗ Failed to download $plugin_slug"
+			rm -rf "$download_dir"
+			return 0
+		fi
+		if ! printf '%s  %s\n' "$archive_sha256" "$archive_file" | sha256sum -c --status; then
+			echo "  ✗ The archive of $plugin_slug does not match its sha256 checksum; skipping"
+			rm -rf "$download_dir"
+			return 0
+		fi
+		chown -R www-data:www-data "$download_dir"
+		archive_source="$archive_file"
+	fi
+
+	if runuser -u www-data -- wp plugin install "$archive_source" --activate 2>/dev/null; then
+		echo "  ✓ Plugin $plugin_slug installed"
 	else
-		echo "  ↓ Installing $plugin_slug from archive..."
-		if runuser -u www-data -- wp plugin install "$archive_source" --activate 2>/dev/null; then
-			echo "  ✓ Plugin $plugin_slug installed"
-		else
-			echo "  ✗ Failed to install $plugin_slug from archive"
+		echo "  ✗ Failed to install $plugin_slug from archive"
+	fi
+
+	if [ -n "$download_dir" ]; then
+		rm -rf "$download_dir"
+	fi
+}
+
+checkout_git_ref() {
+	local target_dir="$1"
+	local git_url="$2"
+	local git_ref="$3"
+	local head_commit
+
+	runuser -u www-data -- git -C "$target_dir" fetch --quiet "$git_url" "$git_ref" || return 1
+	runuser -u www-data -- git -C "$target_dir" checkout --quiet --detach FETCH_HEAD || return 1
+
+	if [[ "$git_ref" =~ ^[0-9a-f]{40}$ ]]; then
+		head_commit="$(runuser -u www-data -- git -C "$target_dir" rev-parse HEAD)"
+		if [ "$head_commit" != "$git_ref" ]; then
+			echo "  ✗ $target_dir is at $head_commit instead of $git_ref"
+			return 1
 		fi
 	fi
+}
+
+sync_git_checkout() {
+	local resource_label="$1"
+	local target_dir="$2"
+	local git_url="$3"
+	local git_ref="$4"
+
+	if [ -z "$git_ref" ]; then
+		allow_unpinned_entry "$resource_label" || return 1
+	fi
+
+	if [ -d "$target_dir" ]; then
+		if [ -z "$git_ref" ]; then
+			echo "  ✓ $resource_label already exists"
+			return 0
+		fi
+		if [ "$(runuser -u www-data -- git -C "$target_dir" rev-parse HEAD 2>/dev/null)" = "$git_ref" ]; then
+			echo "  ✓ $resource_label is already at $git_ref"
+			return 0
+		fi
+		echo "  ↻ Updating $resource_label to $git_ref..."
+	else
+		echo "  ↓ Cloning $resource_label..."
+		if ! runuser -u www-data -- git clone --quiet "$git_url" "$target_dir"; then
+			echo "  ✗ Failed to clone $resource_label"
+			return 1
+		fi
+		if [ -z "$git_ref" ]; then
+			echo "  ✓ $resource_label cloned"
+			return 0
+		fi
+	fi
+
+	if ! checkout_git_ref "$target_dir" "$git_url" "$git_ref"; then
+		echo "  ✗ Failed to check out $git_ref for $resource_label"
+		return 1
+	fi
+	echo "  ✓ $resource_label is at $git_ref"
 }
 
 clone_custom_plugin() {
 	local plugin_name="$1"
 	local git_url="$2"
-	local plugin_dir="/var/www/html/wp-content/plugins/$plugin_name"
+	local git_ref="$3"
 
-	if [ -d "$plugin_dir" ]; then
-		echo "  ✓ Plugin $plugin_name already exists"
-		return 0
-	else
-		echo "  ↓ Cloning $plugin_name..."
-		cd /var/www/html/wp-content/plugins/
-		if git clone "$git_url" "$plugin_name" 2>/dev/null; then
-			echo "  ✓ Plugin $plugin_name cloned"
-			return 0
-		else
-			echo "  ✗ Failed to clone $plugin_name"
-			return 1
-		fi
-	fi
+	sync_git_checkout "Plugin $plugin_name" "/var/www/html/wp-content/plugins/$plugin_name" "$git_url" "$git_ref"
 }
 
 run_custom_plugin_post_install_commands() {
@@ -284,24 +384,15 @@ finalize_custom_plugin() {
 clone_custom_theme() {
 	local theme_name="$1"
 	local git_url="$2"
-	local theme_dir="/var/www/html/wp-content/themes/$theme_name"
+	local git_ref="$3"
 
-	if [ -d "$theme_dir" ]; then
-		echo "  ✓ Theme $theme_name already exists"
-	else
-		echo "  ↓ Cloning theme $theme_name..."
-		cd /var/www/html/wp-content/themes/
-		if git clone "$git_url" "$theme_name" 2>/dev/null; then
-			chown -R www-data:www-data "$theme_dir"
-			echo "  ✓ Theme $theme_name cloned"
-		else
-			echo "  ✗ Failed to clone $theme_name"
-		fi
-	fi
+	sync_git_checkout "Theme $theme_name" "/var/www/html/wp-content/themes/$theme_name" "$git_url" "$git_ref" || true
 }
 
 install_org_plugins_from_config() {
+	local entry
 	local plugin_slug
+	local plugin_version
 
 	echo "Plugins from wordpress.org:"
 
@@ -310,19 +401,21 @@ install_org_plugins_from_config() {
 		return
 	fi
 
-	while IFS= read -r plugin_slug; do
-		plugin_slug="$(trim_value "$plugin_slug")"
+	while IFS= read -r entry; do
+		plugin_slug="$(trim_value "$(printf '%s' "$entry" | base64 -d | yq -r 'if type == "object" then .slug else . end')")"
+		plugin_version="$(printf '%s' "$entry" | base64 -d | yq -r 'if type == "object" then (.version // "" | tostring) else "" end')"
 		if [ -z "$plugin_slug" ] || [ "$plugin_slug" = "null" ]; then
 			continue
 		fi
-		install_plugin "$plugin_slug"
-	done < <(read_yaml_values '.wordpress_org_plugins[]?')
+		install_plugin "$plugin_slug" "$plugin_version"
+	done < <(read_yaml_values '.wordpress_org_plugins[]? | @base64')
 }
 
 install_archive_plugins_from_config() {
 	local entry
 	local plugin_slug
 	local archive_source
+	local archive_sha256
 
 	echo "Plugins from archive:"
 
@@ -334,13 +427,14 @@ install_archive_plugins_from_config() {
 	while IFS= read -r entry; do
 		plugin_slug="$(printf '%s' "$entry" | base64 -d | yq -r '.slug')"
 		archive_source="$(printf '%s' "$entry" | base64 -d | yq -r '.source')"
+		archive_sha256="$(printf '%s' "$entry" | base64 -d | yq -r '.sha256 // ""')"
 
 		if [ -z "$plugin_slug" ] || [ "$plugin_slug" = "null" ] || [ -z "$archive_source" ] || [ "$archive_source" = "null" ]; then
 			echo "  ✗ Invalid configuration in wordpress_archive_plugins"
 			continue
 		fi
 
-		install_plugin_archive "$plugin_slug" "$archive_source"
+		install_plugin_archive "$plugin_slug" "$archive_source" "$archive_sha256"
 	done < <(read_yaml_values '.wordpress_archive_plugins[]? | @base64')
 }
 
@@ -351,6 +445,7 @@ install_git_entries() {
 	local entry
 	local resource_name
 	local source_url
+	local git_ref
 
 	echo "$label:"
 
@@ -362,6 +457,7 @@ install_git_entries() {
 	while IFS= read -r entry; do
 		resource_name="$(printf '%s' "$entry" | base64 -d | yq -r '.slug')"
 		source_url="$(printf '%s' "$entry" | base64 -d | yq -r '.source')"
+		git_ref="$(printf '%s' "$entry" | base64 -d | yq -r '.ref // "" | tostring')"
 
 		if [ -z "$resource_name" ] || [ "$resource_name" = "null" ] || [ -z "$source_url" ] || [ "$source_url" = "null" ]; then
 			echo "  ✗ Invalid configuration in $label"
@@ -369,11 +465,11 @@ install_git_entries() {
 		fi
 
 		if [ "$entry_type" = "plugin" ]; then
-			if clone_custom_plugin "$resource_name" "$source_url"; then
+			if clone_custom_plugin "$resource_name" "$source_url" "$git_ref"; then
 				finalize_custom_plugin "$resource_name" "$entry"
 			fi
 		else
-			clone_custom_theme "$resource_name" "$source_url"
+			clone_custom_theme "$resource_name" "$source_url" "$git_ref"
 		fi
 	done < <(read_yaml_values "${query}[]? | @base64")
 }

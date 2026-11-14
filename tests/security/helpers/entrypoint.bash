@@ -4,10 +4,12 @@ entrypoint_root="${BATS_TEST_DIRNAME}/../.."
 entrypoint_tmp="${BATS_TEST_TMPDIR}/entrypoint"
 entrypoint_network=""
 entrypoint_database_container=""
+entrypoint_image="php:8.3-fpm"
 
 entrypoint_setup() {
 	entrypoint_network="entrypoint-bats-${BATS_TEST_NUMBER:-0}-$$"
-	mkdir -p "${entrypoint_tmp}/document-root" "${entrypoint_tmp}/bin" "${entrypoint_tmp}/log"
+	mkdir -p "${entrypoint_tmp}/document-root/wp-content/plugins" "${entrypoint_tmp}/document-root/wp-content/themes" \
+		"${entrypoint_tmp}/bin" "${entrypoint_tmp}/log" "${entrypoint_tmp}/sources"
 	touch "${entrypoint_tmp}/document-root/wp-load.php" "${entrypoint_tmp}/document-root/wp-config.php"
 	chmod 777 "${entrypoint_tmp}/log"
 
@@ -15,6 +17,7 @@ entrypoint_setup() {
 #!/bin/sh
 echo "wp $*" >> /var/log/entrypoint/wp-calls
 case "$1 $2" in
+	"plugin is-installed") exit 1 ;;
 	"user list") echo 1 ;;
 	"user get") echo 1 ;;
 esac
@@ -59,7 +62,8 @@ entrypoint_run() {
 		-v "${entrypoint_tmp}/bin/php-fpm:/usr/local/sbin/php-fpm:ro" \
 		-v "${entrypoint_tmp}/log:/var/log/entrypoint" \
 		-v "${entrypoint_tmp}/document-root:/var/www/html" \
-		php:8.3-fpm bash /var/www/scripts/entrypoint.sh
+		-v "${entrypoint_tmp}/sources:/sources:ro" \
+		"${entrypoint_image}" bash /var/www/scripts/entrypoint.sh
 }
 
 entrypoint_wp_calls() {
