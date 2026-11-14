@@ -48,6 +48,17 @@ is_truthy() {
 	esac
 }
 
+is_local_environment() {
+	case "${WP_ENVIRONMENT_TYPE:-}" in
+		local|development)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 plugins_config_exists() {
 	[ -n "$(trim_value "${WORDPRESS_SETUP_CONFIG_YAML:-}")" ]
 }
@@ -127,6 +138,11 @@ sync_site_urls() {
 		return
 	fi
 
+	if ! is_local_environment; then
+		echo "ERROR: PROD_SITE_URL is set but WP_ENVIRONMENT_TYPE is not local or development; skipping URL synchronization." >&2
+		return
+	fi
+
 	prod_url="$(normalize_url "${PROD_SITE_URL}")"
 	local_url="$(normalize_url "${LOCAL_SITE_URL:-http://localhost}")"
 	prod_host="$(strip_protocol "${prod_url}")"
@@ -148,6 +164,11 @@ reset_local_user_passwords() {
 
 	if [ -z "$shared_password" ]; then
 		echo "WORDPRESS_LOCAL_USERS_PASSWORD not set; skipping local user password reset."
+		return
+	fi
+
+	if ! is_local_environment; then
+		echo "ERROR: WORDPRESS_LOCAL_USERS_PASSWORD is set but WP_ENVIRONMENT_TYPE is not local or development; skipping password reset." >&2
 		return
 	fi
 
