@@ -1,10 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "enabledManagers": [
-    "custom.regex"
+    "custom.regex",
+    "dockerfile",
+    "docker-compose",
+    "github-actions"
   ],
   "dependencyDashboard": false,
   "separateMinorPatch": true,
+  "docker-compose": {
+    "managerFilePatterns": [
+      "/(^|/)common-services\\.yml$/"
+    ]
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -30,6 +38,15 @@
       "matchUpdateTypes": [
         "major",
         "minor"
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/librecodecoop/wordpress-docker"
       ],
       "enabled": false
     }
