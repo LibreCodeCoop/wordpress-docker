@@ -2,6 +2,7 @@
 
 nginx_hardening_root="${BATS_TEST_DIRNAME}/../.."
 nginx_hardening_script="${nginx_hardening_root}/.docker/nginx/docker-entrypoint.d/40-xmlrpc-hardening.sh"
+nginx_web_install_script="${nginx_hardening_root}/.docker/nginx/docker-entrypoint.d/41-web-install.sh"
 nginx_hardening_tmp="${BATS_TEST_TMPDIR}/nginx"
 nginx_hardening_container=""
 nginx_hardening_port=""
@@ -26,10 +27,11 @@ server {
 		try_files $uri =404;
 	}
 	location ~ \.php$ {
-		proxy_pass http://127.0.0.1:8081;
+		include /etc/nginx/snippets/php-fpm.conf;
 	}
 }
 NGINX_CONF
+	printf '%s\n' 'proxy_pass http://127.0.0.1:8081;' > "${nginx_hardening_tmp}/php-fpm.conf"
 }
 
 nginx_hardening_logs() {
@@ -50,6 +52,7 @@ nginx_hardening_start() {
 	nginx_hardening_container="$(docker run -d --rm "${environment_args[@]}" \
 		-v "${nginx_hardening_script}:/docker-entrypoint.d/40-xmlrpc-hardening.sh:ro" \
 		-v "${nginx_hardening_tmp}/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+		-v "${nginx_hardening_tmp}/php-fpm.conf:/etc/nginx/snippets/php-fpm.conf:ro" \
 		-p 127.0.0.1::80 nginx:latest)"
 
 	nginx_hardening_port="$(docker port "${nginx_hardening_container}" 80/tcp | sed 's/.*://')"
@@ -104,10 +107,15 @@ nginx_hardening_server_snippet() {
 
 nginx_hardening_integration_start() {
 	local value="${1-__UNSET__}"
+	local web_install_value="${2-__UNSET__}"
 	local -a environment_args=()
 
 	if [ "${value}" != "__UNSET__" ]; then
-		environment_args=(-e "WORDPRESS_XMLRPC_ENABLED=${value}")
+		environment_args+=(-e "WORDPRESS_XMLRPC_ENABLED=${value}")
+	fi
+
+	if [ "${web_install_value}" != "__UNSET__" ]; then
+		environment_args+=(-e "WORDPRESS_WEB_INSTALL_ENABLED=${web_install_value}")
 	fi
 
 	local -a server_snippets_args=()
@@ -118,7 +126,9 @@ nginx_hardening_integration_start() {
 	nginx_hardening_container="$(docker run -d --rm "${environment_args[@]}" \
 		--network "${nginx_hardening_network}" \
 		-v "${nginx_hardening_root}/.docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+		-v "${nginx_hardening_root}/.docker/nginx/snippets:/etc/nginx/snippets:ro" \
 		-v "${nginx_hardening_script}:/docker-entrypoint.d/40-xmlrpc-hardening.sh:ro" \
+		-v "${nginx_web_install_script}:/docker-entrypoint.d/41-web-install.sh:ro" \
 		-v "${nginx_hardening_tmp}/document-root:/var/www/html:ro" \
 		"${server_snippets_args[@]}" \
 		-p 127.0.0.1::80 nginx:latest)"

@@ -12,7 +12,7 @@ teardown() {
 }
 
 @test "real nginx config starts without server snippets" {
-	nginx_hardening_integration_start
+	nginx_hardening_integration_start 1
 	nginx_hardening_config_is_valid
 
 	run nginx_hardening_request POST /xmlrpc.php "${nginx_hardening_tmp}/request-body"
@@ -23,7 +23,7 @@ teardown() {
 
 @test "real nginx config applies server snippets" {
 	nginx_hardening_server_snippet client-max-body-size.conf 'client_max_body_size 1k;'
-	nginx_hardening_integration_start
+	nginx_hardening_integration_start 1
 	nginx_hardening_config_is_valid
 
 	run nginx_hardening_request POST /xmlrpc.php "${nginx_hardening_tmp}/request-body"
