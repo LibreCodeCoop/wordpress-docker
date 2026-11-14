@@ -28,6 +28,8 @@ docker compose up -d
 
 nginx only runs the WordPress entry points through PHP-FPM: the PHP files at the root used by WordPress (`index.php`, `wp-login.php`, `wp-cron.php`...), the scripts directly under `wp-admin/` (and `wp-admin/network/`, `wp-admin/user/`) and `wp-includes/js/tinymce/wp-tinymce.php`. Any other `.php`, `.phtml`, `.phar` or `.pht` file returns 404, including files under `wp-content`.
 
+nginx also returns 403 for files that should never be public: dotfiles (except `.well-known/`), backups and editor leftovers (`.bak`, `.old`, `.orig`, `.save`, `.swp`, `~`), dumps, logs and archives (`.sql`, `.log`, `.tar`, `.gz`, `.7z`, `.rar`, `.wpress`...), `.zip` files outside the media folders `wp-content/uploads/YYYY/MM/`, the backup and log folders of common plugins, and dependency manifests (`composer.json`, `package.json`, `phpunit.xml`...).
+
 These are closed by default and can be enabled on the `nginx` service:
 - `WORDPRESS_XMLRPC_ENABLED=1`: serve `xmlrpc.php`.
 - `WORDPRESS_WEB_INSTALL_ENABLED=1`: serve `wp-admin/install.php` and `wp-admin/setup-config.php` to finish the installation in the browser.
