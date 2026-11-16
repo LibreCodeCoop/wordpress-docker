@@ -43,6 +43,8 @@ services:
   wordpress:
     environment:
       XDEBUG_MODE: ${XDEBUG_MODE:-debug}
+      # PROD_SITE_URL and the password reset below only run when this is local or development.
+      WP_ENVIRONMENT_TYPE: local
       # Production base URL used for automatic search-replace in the database.
       # Set this only when importing a production dump and needing URL remap.
       PROD_SITE_URL: ${PROD_SITE_URL:-}
@@ -113,7 +115,7 @@ After that, start the stack with the standard Compose command:
 docker compose up -d --build
 ```
 
-On each startup (when WordPress is already installed), the entrypoint can automatically reset local user passwords:
+On each startup (when WordPress is already installed and `WP_ENVIRONMENT_TYPE` is `local` or `development`), the entrypoint can automatically reset local user passwords:
 - `WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS=1`: reset all users to `WORDPRESS_LOCAL_USERS_PASSWORD`.
 - `WORDPRESS_LOCAL_RESET_PASSWORD_FOR_USER=<login|email|id>`: reset only one user.
 
