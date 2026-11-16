@@ -2,12 +2,14 @@
 
 set -eu
 
-xmlrpc_enabled="$(printf '%s' "${WORDPRESS_XMLRPC_ENABLED:-1}" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+xmlrpc_enabled="$(printf '%s' "${WORDPRESS_XMLRPC_ENABLED:-0}" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
 
 case "$xmlrpc_enabled" in
 	1|true|yes|on)
 		cat > /tmp/xmlrpc-hardening.conf <<'EOF'
-# XML-RPC explicitly enabled for this environment.
+location = /xmlrpc.php {
+	include /etc/nginx/snippets/php-fpm.conf;
+}
 EOF
 		;;
 	0|false|no|off)

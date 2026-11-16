@@ -58,9 +58,9 @@ teardown() {
 	nginx_hardening_assert_status 200 "${output}"
 }
 
-@test "real nginx config still runs plugin PHP outside vendor folders" {
+@test "real nginx config does not run plugin PHP outside vendor folders directly" {
 	run nginx_hardening_request GET /wp-content/plugins/plugin/plugin.php
 	[ "${status}" -eq 0 ]
-	nginx_hardening_assert_status 200 "${output}"
-	nginx_hardening_assert_upstream_reached
+	nginx_hardening_assert_status 404 "${output}"
+	nginx_hardening_assert_upstream_not_reached
 }

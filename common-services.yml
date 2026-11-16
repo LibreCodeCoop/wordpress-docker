@@ -16,6 +16,11 @@ services:
       - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD:-root}
       - WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:-wp_}
       - WORDPRESS_SETUP_CONFIG_YAML=${WORDPRESS_SETUP_CONFIG_YAML:-}
+      - WORDPRESS_SITE_URL
+      - WORDPRESS_SITE_TITLE
+      - WORDPRESS_ADMIN_USER
+      - WORDPRESS_ADMIN_PASSWORD
+      - WORDPRESS_ADMIN_EMAIL
       - WP_ENVIRONMENT_TYPE
       - WORDPRESS_LOCAL_USERS_PASSWORD=${WORDPRESS_LOCAL_USERS_PASSWORD:-}
       - WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS=${WORDPRESS_LOCAL_RESET_ALL_USERS_PASSWORDS:-0}
@@ -33,13 +38,16 @@ services:
     volumes:
       - ./volumes/wordpress:/var/www/html:ro
       - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./.docker/nginx/snippets/:/etc/nginx/snippets/:ro
       - ./.docker/nginx/docker-entrypoint.d/40-xmlrpc-hardening.sh:/docker-entrypoint.d/40-xmlrpc-hardening.sh:ro
+      - ./.docker/nginx/docker-entrypoint.d/41-web-install.sh:/docker-entrypoint.d/41-web-install.sh:ro
     environment:
       - DEFAULT_HOST
       - VIRTUAL_HOST
       - LETSENCRYPT_HOST
       - LETSENCRYPT_EMAIL
-      - WORDPRESS_XMLRPC_ENABLED=${WORDPRESS_XMLRPC_ENABLED:-1}
+      - WORDPRESS_XMLRPC_ENABLED=${WORDPRESS_XMLRPC_ENABLED:-0}
+      - WORDPRESS_WEB_INSTALL_ENABLED=${WORDPRESS_WEB_INSTALL_ENABLED:-0}
 
   mariadb:
     build:
