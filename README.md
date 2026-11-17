@@ -120,6 +120,8 @@ services:
 
 Entries without `version`, `sha256` or a `ref` with a full commit SHA install whatever the source serves at that moment and are reported in the log. Set `WORDPRESS_SETUP_REQUIRE_PINNED=1` to skip them instead.
 
+Pins live in the project that supplies `WORDPRESS_SETUP_CONFIG_YAML`, so that project keeps them up to date, for example with a Renovate custom manager matching `ref: <sha> # vX.Y.Z`, `version` or `sha256` in its own Compose file. The values in this README and in the tests are only examples.
+
 After that, start the stack with the standard Compose command:
 
 ```bash
