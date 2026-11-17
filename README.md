@@ -85,11 +85,12 @@ services:
         # (and on every container start if the plugin directory already exists).
         # Commands run as www-data from the WordPress root (/var/www/html).
         # The env var PLUGIN_DIR is set to the absolute plugin directory path.
-        # Optional: ref pins a tag or a full commit SHA. A plugin whose commit does not match is not activated.
+        # Optional: ref pins a full commit SHA. A plugin whose commit does not match is not activated.
+        # A tag or branch is also accepted, but it can move, so the checkout follows it on every start and is reported as unpinned.
         wordpress_custom_plugins:
           - slug: my-plugin
             source: https://github.com/org/my-plugin.git
-            ref: v1.2.0
+            ref: 0123456789abcdef0123456789abcdef01234567 # v1.2.0
           - slug: my-plugin-with-fixup
             source: https://github.com/org/my-plugin-with-fixup.git
             post_install_commands:
@@ -117,7 +118,7 @@ services:
       - 127.0.0.1:${MAILPIT_PORT:-8025}:8025
 ```
 
-Entries without `version`, `sha256` or `ref` install whatever the source serves at that moment and are reported in the log. Set `WORDPRESS_SETUP_REQUIRE_PINNED=1` to skip them instead.
+Entries without `version`, `sha256` or a `ref` with a full commit SHA install whatever the source serves at that moment and are reported in the log. Set `WORDPRESS_SETUP_REQUIRE_PINNED=1` to skip them instead.
 
 After that, start the stack with the standard Compose command:
 

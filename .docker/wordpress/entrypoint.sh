@@ -201,14 +201,19 @@ reset_local_user_passwords() {
 
 allow_unpinned_entry() {
 	local resource_label="$1"
+	local reason="${2:-has no pin}"
 
 	if is_truthy "${WORDPRESS_SETUP_REQUIRE_PINNED:-0}"; then
-		echo "  ✗ $resource_label has no pin and WORDPRESS_SETUP_REQUIRE_PINNED is enabled; skipping"
+		echo "  ✗ $resource_label $reason and WORDPRESS_SETUP_REQUIRE_PINNED is enabled; skipping"
 		return 1
 	fi
 
-	echo "  ⚠ $resource_label has no pin; using the latest version"
+	echo "  ⚠ $resource_label $reason; using the latest version"
 	return 0
+}
+
+is_commit_sha() {
+	[[ "$1" =~ ^[0-9a-f]{40}$ ]]
 }
 
 install_plugin() {
@@ -305,7 +310,7 @@ checkout_git_ref() {
 	runuser -u www-data -- git -C "$target_dir" fetch --quiet "$git_url" "$git_ref" || return 1
 	runuser -u www-data -- git -C "$target_dir" checkout --quiet --detach FETCH_HEAD || return 1
 
-	if [[ "$git_ref" =~ ^[0-9a-f]{40}$ ]]; then
+	if is_commit_sha "$git_ref"; then
 		head_commit="$(runuser -u www-data -- git -C "$target_dir" rev-parse HEAD)"
 		if [ "$head_commit" != "$git_ref" ]; then
 			echo "  ✗ $target_dir is at $head_commit instead of $git_ref"
@@ -322,6 +327,8 @@ sync_git_checkout() {
 
 	if [ -z "$git_ref" ]; then
 		allow_unpinned_entry "$resource_label" || return 1
+	elif ! is_commit_sha "$git_ref"; then
+		allow_unpinned_entry "$resource_label" "uses $git_ref, which can move to another commit" || return 1
 	fi
 
 	if [ -d "$target_dir" ]; then

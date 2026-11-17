@@ -37,13 +37,42 @@ plugin_head() {
 	[[ "$(entrypoint_wp_calls)" == *"plugin activate pinned"* ]]
 }
 
-@test "a custom plugin pinned to a tag is checked out at the tag" {
-	run entrypoint_run "WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
+@test "a custom plugin that references a tag follows the tag and is reported as movable" {
+	local config="WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
+  - slug: tagged
+    source: file:///sources/plugin.git
+    ref: v1.0.0"
+
+	run entrypoint_run "${config}"
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *"tagged uses v1.0.0, which can move to another commit"* ]]
+	[ "$(plugin_head tagged)" = "${first_commit}" ]
+
+	git -C "${entrypoint_tmp}/sources/plugin.git" tag -f v1.0.0 "${second_commit}" >/dev/null
+
+	run entrypoint_run "${config}"
+	[ "${status}" -eq 0 ]
+	[ "$(plugin_head tagged)" = "${second_commit}" ]
+}
+
+@test "a custom plugin that references a tag is skipped when pins are required" {
+	run entrypoint_run WORDPRESS_SETUP_REQUIRE_PINNED=1 "WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
   - slug: tagged
     source: file:///sources/plugin.git
     ref: v1.0.0"
 	[ "${status}" -eq 0 ]
-	[ "$(plugin_head tagged)" = "${first_commit}" ]
+	[ ! -e "${entrypoint_tmp}/document-root/wp-content/plugins/tagged" ]
+	[[ "$(entrypoint_wp_calls)" != *"plugin activate tagged"* ]]
+}
+
+@test "a custom plugin pinned to a commit is accepted when pins are required" {
+	run entrypoint_run WORDPRESS_SETUP_REQUIRE_PINNED=1 "WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
+  - slug: pinned
+    source: file:///sources/plugin.git
+    ref: ${first_commit}"
+	[ "${status}" -eq 0 ]
+	[ "$(plugin_head pinned)" = "${first_commit}" ]
+	[[ "$(entrypoint_wp_calls)" == *"plugin activate pinned"* ]]
 }
 
 @test "a custom plugin whose commit cannot be checked out is not activated" {
