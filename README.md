@@ -16,11 +16,23 @@ Prerequisite: [Docker](https://docs.docker.com/get-docker/) must be installed on
 
 ### Production
 
-After clone:
+After clone, set the site URL and the first administrator so the container installs WordPress on the first start:
 
 ```bash
+WORDPRESS_SITE_URL=https://example.com \
+WORDPRESS_ADMIN_USER=admin \
+WORDPRESS_ADMIN_PASSWORD='a strong password' \
+WORDPRESS_ADMIN_EMAIL=admin@example.com \
 docker compose up -d
 ```
+
+nginx only runs the WordPress entry points through PHP-FPM: the PHP files at the root used by WordPress (`index.php`, `wp-login.php`, `wp-cron.php`...), the scripts directly under `wp-admin/` (and `wp-admin/network/`, `wp-admin/user/`) and `wp-includes/js/tinymce/wp-tinymce.php`. Any other `.php`, `.phtml`, `.phar` or `.pht` file returns 404, including files under `wp-content`.
+
+nginx also returns 403 for files that should never be public: dotfiles (except `.well-known/`), backups and editor leftovers (`.bak`, `.old`, `.orig`, `.save`, `.swp`, `~`), dumps, logs and archives (`.sql`, `.log`, `.tar`, `.gz`, `.7z`, `.rar`, `.wpress`...), `.zip` files outside the media folders `wp-content/uploads/YYYY/MM/`, the backup and log folders of common plugins, and dependency manifests (`composer.json`, `package.json`, `phpunit.xml`...).
+
+These are closed by default and can be enabled on the `nginx` service:
+- `WORDPRESS_XMLRPC_ENABLED=1`: serve `xmlrpc.php`.
+- `WORDPRESS_WEB_INSTALL_ENABLED=1`: serve `wp-admin/install.php` and `wp-admin/setup-config.php` to finish the installation in the browser.
 
 ### Development
 
@@ -90,9 +102,6 @@ services:
             ref: 0123456789abcdef0123456789abcdef01234567
 
   nginx:
-    environment:
-      # Hardened deployment example: block XML-RPC before PHP-FPM.
-      WORDPRESS_XMLRPC_ENABLED: ${WORDPRESS_XMLRPC_ENABLED:-0}
     ports:
       - 127.0.0.1:80:80
 
@@ -133,6 +142,14 @@ Every `*.conf` file mounted at `/etc/nginx/server.d/` is included at the end of 
 
 ```nginx
 client_max_body_size 0;
+```
+
+A plugin that needs one of its PHP files reachable directly can be allowed with a `^~` location, which takes precedence over the PHP rules of `default.conf`:
+
+```nginx
+location ^~ /wp-content/plugins/my-plugin/endpoint.php {
+    include /etc/nginx/snippets/php-fpm.conf;
+}
 ```
 
 ### Database dump

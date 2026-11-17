@@ -10,14 +10,14 @@ teardown() {
 	nginx_hardening_stop
 }
 
-@test "XML-RPC is allowed when the variable is absent" {
+@test "XML-RPC is blocked when the variable is absent" {
 	nginx_hardening_start
 	nginx_hardening_config_is_valid
 
 	run nginx_hardening_request GET /xmlrpc.php
 	[ "${status}" -eq 0 ]
-	nginx_hardening_assert_status 200 "${output}"
-	nginx_hardening_assert_upstream_reached
+	nginx_hardening_assert_status 403 "${output}"
+	nginx_hardening_assert_upstream_not_reached
 }
 
 @test "XML-RPC is allowed when explicitly enabled" {

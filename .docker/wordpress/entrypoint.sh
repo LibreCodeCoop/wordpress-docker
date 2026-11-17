@@ -474,7 +474,27 @@ install_git_entries() {
 	done < <(read_yaml_values "${query}[]? | @base64")
 }
 
+install_wordpress_core() {
+	if wordpress_is_installed; then
+		return
+	fi
+
+	if [ -z "${WORDPRESS_SITE_URL:-}" ] || [ -z "${WORDPRESS_ADMIN_USER:-}" ] || [ -z "${WORDPRESS_ADMIN_PASSWORD:-}" ] || [ -z "${WORDPRESS_ADMIN_EMAIL:-}" ]; then
+		return
+	fi
+
+	echo "Installing WordPress core..."
+	runuser -u www-data -- wp core install \
+		--url="${WORDPRESS_SITE_URL}" \
+		--title="${WORDPRESS_SITE_TITLE:-WordPress}" \
+		--admin_user="${WORDPRESS_ADMIN_USER}" \
+		--admin_password="${WORDPRESS_ADMIN_PASSWORD}" \
+		--admin_email="${WORDPRESS_ADMIN_EMAIL}" \
+		--skip-email
+}
+
 wait_for_db
+install_wordpress_core
 
 echo "Installing plugins and themes..."
 
@@ -493,7 +513,7 @@ if wordpress_is_installed; then
 	fi
 else
 	echo "WordPress is not installed yet; skipping automatic plugin and theme installation."
-	echo "After completing the initial setup in the browser, restart the container to run this step."
+	echo "Set WORDPRESS_SITE_URL, WORDPRESS_ADMIN_USER, WORDPRESS_ADMIN_PASSWORD and WORDPRESS_ADMIN_EMAIL to install it on startup, or enable WORDPRESS_WEB_INSTALL_ENABLED on nginx to use the browser installer."
 fi
 
 echo ""
