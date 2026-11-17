@@ -126,3 +126,50 @@ wordpress_custom_plugins:
 	[[ "${output}" == *"checksum"* ]]
 	[[ "$(entrypoint_wp_calls)" != *"plugin install"* ]]
 }
+
+@test "an archive plugin is reinstalled when its pinned checksum changes" {
+	cat > "${entrypoint_tmp}/bin/wp" <<'WP_STUB'
+#!/bin/sh
+echo "wp $*" >> /var/log/entrypoint/wp-calls
+plugins=/var/www/html/wp-content/plugins
+case "$1 $2" in
+	"plugin is-installed") [ -d "$plugins/$3" ]; exit ;;
+	"plugin install")
+		slug="$(basename "$3" .zip)"
+		rm -rf "${plugins:?}/$slug"
+		mkdir -p "$plugins/$slug"
+		cp "$3" "$plugins/$slug/archive"
+		exit 0 ;;
+	"user list"|"user get") echo 1 ;;
+esac
+exit 0
+WP_STUB
+	printf '%s\n' 'updated archive' > "${entrypoint_tmp}/sources/plugin-updated.zip"
+	local updated_sha256
+	updated_sha256="$(sha256sum "${entrypoint_tmp}/sources/plugin-updated.zip" | cut -d' ' -f1)"
+	local installed_archive="${entrypoint_tmp}/document-root/wp-content/plugins/archived/archive"
+
+	run entrypoint_run "WORDPRESS_SETUP_CONFIG_YAML=wordpress_archive_plugins:
+  - slug: archived
+    source: file:///sources/plugin.zip
+    sha256: ${archive_sha256}"
+	[ "${status}" -eq 0 ]
+	[ "$(cat "${installed_archive}")" = "archive" ]
+
+	run entrypoint_run "WORDPRESS_SETUP_CONFIG_YAML=wordpress_archive_plugins:
+  - slug: archived
+    source: file:///sources/plugin-updated.zip
+    sha256: ${updated_sha256}"
+	[ "${status}" -eq 0 ]
+	[ "$(cat "${installed_archive}")" = "updated archive" ]
+	[[ "$(entrypoint_wp_calls)" == *"plugin install /tmp/"*"/archived.zip --force --activate"* ]]
+
+	: > "${entrypoint_tmp}/log/wp-calls"
+	run entrypoint_run "WORDPRESS_SETUP_CONFIG_YAML=wordpress_archive_plugins:
+  - slug: archived
+    source: file:///sources/plugin-updated.zip
+    sha256: ${updated_sha256}"
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *"archived is already installed"* ]]
+	[[ "$(entrypoint_wp_calls)" != *"plugin install"* ]]
+}

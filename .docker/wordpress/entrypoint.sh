@@ -247,17 +247,24 @@ install_plugin_archive() {
 	local archive_sha256="$3"
 	local download_dir
 	local archive_file
+	local checksum_file="/var/www/html/wp-content/plugins/$plugin_slug/.archive-sha256"
+	local -a force_args=()
 
 	if [ -z "$archive_sha256" ]; then
 		allow_unpinned_entry "Plugin $plugin_slug" || return 0
 	fi
 
 	if runuser -u www-data -- wp plugin is-installed "$plugin_slug" 2>/dev/null; then
-		echo "  ✓ Plugin $plugin_slug is already installed"
-		return 0
+		if [ -z "$archive_sha256" ] || [ "$(cat "$checksum_file" 2>/dev/null)" = "$archive_sha256" ]; then
+			echo "  ✓ Plugin $plugin_slug is already installed"
+			return 0
+		fi
+		echo "  ↻ Reinstalling $plugin_slug from the archive with sha256 $archive_sha256..."
+		force_args=(--force)
+	else
+		echo "  ↓ Installing $plugin_slug from archive..."
 	fi
 
-	echo "  ↓ Installing $plugin_slug from archive..."
 	if [ -n "$archive_sha256" ]; then
 		download_dir="$(mktemp -d)"
 		archive_file="$download_dir/$plugin_slug.zip"
@@ -275,7 +282,10 @@ install_plugin_archive() {
 		archive_source="$archive_file"
 	fi
 
-	if runuser -u www-data -- wp plugin install "$archive_source" --activate 2>/dev/null; then
+	if runuser -u www-data -- wp plugin install "$archive_source" "${force_args[@]}" --activate 2>/dev/null; then
+		if [ -n "$archive_sha256" ] && [ -d "$(dirname "$checksum_file")" ]; then
+			printf '%s\n' "$archive_sha256" | runuser -u www-data -- tee "$checksum_file" >/dev/null
+		fi
 		echo "  ✓ Plugin $plugin_slug installed"
 	else
 		echo "  ✗ Failed to install $plugin_slug from archive"

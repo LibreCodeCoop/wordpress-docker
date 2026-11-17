@@ -77,6 +77,7 @@ services:
           - slug: my-premium-plugin
             source: https://example.com/releases/my-premium-plugin-1.0.0.zip
             # Optional: the archive is only installed when it matches this checksum.
+            # Changing the checksum reinstalls the plugin from the new archive on the next start.
             sha256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
         # Plugins cloned from a Git repository.
