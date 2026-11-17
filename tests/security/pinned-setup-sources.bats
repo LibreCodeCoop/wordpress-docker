@@ -13,6 +13,8 @@ setup() {
 	first_commit="$(git -C "${repository}" rev-parse HEAD)"
 	git -C "${repository}" -c user.name=test -c user.email=test@example.com commit -q --allow-empty -m second
 	second_commit="$(git -C "${repository}" rev-parse HEAD)"
+	git -C "${repository}" -c user.name=test -c user.email=test@example.com tag -a v2.0.0 -m v2.0.0
+	annotated_tag_object="$(git -C "${repository}" rev-parse v2.0.0)"
 	git clone -q --bare "${repository}" "${entrypoint_tmp}/sources/plugin.git"
 
 	printf '%s\n' 'archive' > "${entrypoint_tmp}/sources/plugin.zip"
@@ -35,6 +37,73 @@ plugin_head() {
 	[ "${status}" -eq 0 ]
 	[ "$(plugin_head pinned)" = "${first_commit}" ]
 	[[ "$(entrypoint_wp_calls)" == *"plugin activate pinned"* ]]
+}
+
+@test "a custom plugin pinned to an annotated tag object is checked out at the tagged commit" {
+	local config="WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
+  - slug: annotated
+    source: file:///sources/plugin.git
+    ref: ${annotated_tag_object}"
+
+	[ "${annotated_tag_object}" != "${second_commit}" ]
+
+	run entrypoint_run "${config}"
+	[ "${status}" -eq 0 ]
+	[ "$(plugin_head annotated)" = "${second_commit}" ]
+	[[ "$(entrypoint_wp_calls)" == *"plugin activate annotated"* ]]
+
+	run entrypoint_run "${config}"
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *"annotated is already at ${annotated_tag_object}"* ]]
+}
+
+@test "an existing checkout moved to an annotated tag pin stays there after gc without its source" {
+	local plugin_dir="${entrypoint_tmp}/document-root/wp-content/plugins/existing"
+	local config="WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
+  - slug: existing
+    source: file:///sources/plugin.git
+    ref: ${annotated_tag_object}"
+
+	git clone -q --no-tags "${entrypoint_tmp}/sources/plugin.git" "${plugin_dir}"
+	git -C "${plugin_dir}" checkout -q --detach "${first_commit}"
+
+	run entrypoint_run "${config}"
+	[ "${status}" -eq 0 ]
+	[ "$(plugin_head existing)" = "${second_commit}" ]
+
+	git -C "${plugin_dir}" -c gc.reflogExpire=now -c gc.reflogExpireUnreachable=now reflog expire --all
+	git -C "${plugin_dir}" gc -q --prune=now
+	mv "${entrypoint_tmp}/sources/plugin.git" "${entrypoint_tmp}/sources/offline.git"
+
+	: > "${entrypoint_tmp}/log/wp-calls"
+	run entrypoint_run "${config}"
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *"existing is already at ${annotated_tag_object}"* ]]
+	[[ "$(entrypoint_wp_calls)" == *"plugin activate existing"* ]]
+}
+
+@test "a fresh clone whose pinned SHA is not a commit is removed and not activated" {
+	local repository="${entrypoint_tmp}/tree-work"
+	git init -q -b main "${repository}"
+	printf '%s\n' '<?php' > "${repository}/plugin.php"
+	git -C "${repository}" add plugin.php
+	git -C "${repository}" -c user.name=test -c user.email=test@example.com commit -q -m tree
+	local tree_sha
+	tree_sha="$(git -C "${repository}" rev-parse 'HEAD^{tree}')"
+	git clone -q --bare "${repository}" "${entrypoint_tmp}/sources/tree.git"
+
+	run entrypoint_run "WORDPRESS_SETUP_CONFIG_YAML=wordpress_custom_plugins:
+  - slug: tree
+    source: file:///sources/tree.git
+    ref: ${tree_sha}
+wordpress_custom_themes:
+  - slug: tree-theme
+    source: file:///sources/tree.git
+    ref: ${tree_sha}"
+	[ "${status}" -eq 0 ]
+	[ ! -e "${entrypoint_tmp}/document-root/wp-content/plugins/tree" ]
+	[ ! -e "${entrypoint_tmp}/document-root/wp-content/themes/tree-theme" ]
+	[[ "$(entrypoint_wp_calls)" != *"plugin activate tree"* ]]
 }
 
 @test "a custom plugin that references a tag follows the tag and is reported as movable" {

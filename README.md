@@ -85,7 +85,9 @@ services:
         # (and on every container start if the plugin directory already exists).
         # Commands run as www-data from the WordPress root (/var/www/html).
         # The env var PLUGIN_DIR is set to the absolute plugin directory path.
-        # Optional: ref pins a full commit SHA. A plugin whose commit does not match is not activated.
+        # Optional: ref pins a full commit SHA, or the SHA of an annotated tag, which Renovate records for those tags.
+        # A tag SHA is not a commit SHA: the log shows the tag SHA, and the source must keep that tag to clone it again.
+        # A plugin whose commit does not match is not activated.
         # A tag or branch is also accepted, but it can move, so the checkout follows it on every start and is reported as unpinned.
         wordpress_custom_plugins:
           - slug: my-plugin

@@ -212,8 +212,17 @@ allow_unpinned_entry() {
 	return 0
 }
 
-is_commit_sha() {
+is_full_sha() {
 	[[ "$1" =~ ^[0-9a-f]{40}$ ]]
+}
+
+is_at_pinned_commit() {
+	local target_dir="$1"
+	local git_ref="$2"
+	local pinned_commit
+
+	pinned_commit="$(runuser -u www-data -- git -C "$target_dir" rev-parse --verify --quiet "$git_ref^{commit}" 2>/dev/null)" || return 1
+	[ "$(runuser -u www-data -- git -C "$target_dir" rev-parse HEAD 2>/dev/null)" = "$pinned_commit" ]
 }
 
 install_plugin() {
@@ -305,17 +314,13 @@ checkout_git_ref() {
 	local target_dir="$1"
 	local git_url="$2"
 	local git_ref="$3"
-	local head_commit
 
 	runuser -u www-data -- git -C "$target_dir" fetch --quiet "$git_url" "$git_ref" || return 1
 	runuser -u www-data -- git -C "$target_dir" checkout --quiet --detach FETCH_HEAD || return 1
 
-	if is_commit_sha "$git_ref"; then
-		head_commit="$(runuser -u www-data -- git -C "$target_dir" rev-parse HEAD)"
-		if [ "$head_commit" != "$git_ref" ]; then
-			echo "  ✗ $target_dir is at $head_commit instead of $git_ref"
-			return 1
-		fi
+	if is_full_sha "$git_ref"; then
+		is_at_pinned_commit "$target_dir" "$git_ref" || return 1
+		runuser -u www-data -- git -C "$target_dir" update-ref refs/pinned "$git_ref"
 	fi
 }
 
@@ -324,10 +329,11 @@ sync_git_checkout() {
 	local target_dir="$2"
 	local git_url="$3"
 	local git_ref="$4"
+	local fresh_clone=0
 
 	if [ -z "$git_ref" ]; then
 		allow_unpinned_entry "$resource_label" || return 1
-	elif ! is_commit_sha "$git_ref"; then
+	elif ! is_full_sha "$git_ref"; then
 		allow_unpinned_entry "$resource_label" "uses $git_ref, which can move to another commit" || return 1
 	fi
 
@@ -336,7 +342,7 @@ sync_git_checkout() {
 			echo "  ✓ $resource_label already exists"
 			return 0
 		fi
-		if [ "$(runuser -u www-data -- git -C "$target_dir" rev-parse HEAD 2>/dev/null)" = "$git_ref" ]; then
+		if is_full_sha "$git_ref" && is_at_pinned_commit "$target_dir" "$git_ref"; then
 			echo "  ✓ $resource_label is already at $git_ref"
 			return 0
 		fi
@@ -351,10 +357,14 @@ sync_git_checkout() {
 			echo "  ✓ $resource_label cloned"
 			return 0
 		fi
+		fresh_clone=1
 	fi
 
 	if ! checkout_git_ref "$target_dir" "$git_url" "$git_ref"; then
 		echo "  ✗ Failed to check out $git_ref for $resource_label"
+		if [ "$fresh_clone" = 1 ]; then
+			rm -rf "$target_dir"
+		fi
 		return 1
 	fi
 	echo "  ✓ $resource_label is at $git_ref"
