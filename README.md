@@ -62,9 +62,11 @@ services:
       # Use wordpress_org_plugins, wordpress_archive_plugins, wordpress_custom_plugins, and wordpress_custom_themes.
       WORDPRESS_SETUP_CONFIG_YAML: |
         # Plugins installed directly from the WordPress.org repository.
+        # Use a mapping with version to pin a release.
         wordpress_org_plugins:
           - advanced-custom-fields
-          - woocommerce
+          - slug: woocommerce
+            version: 10.3.0
 
         # Plugins installed from a .zip URL (e.g. GitHub Releases or S3).
         # Optional: post_install_commands — list of shell commands run after installing
@@ -74,15 +76,21 @@ services:
         wordpress_archive_plugins:
           - slug: my-premium-plugin
             source: https://example.com/releases/my-premium-plugin-1.0.0.zip
+            # Optional: the archive is only installed when it matches this checksum.
+            # Changing the checksum reinstalls the plugin from the new archive on the next start.
+            sha256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
         # Plugins cloned from a Git repository.
         # Optional: post_install_commands — list of shell commands run after cloning
         # (and on every container start if the plugin directory already exists).
         # Commands run as www-data from the WordPress root (/var/www/html).
         # The env var PLUGIN_DIR is set to the absolute plugin directory path.
+        # Optional: ref pins a full commit SHA. A plugin whose commit does not match is not activated.
+        # A tag or branch is also accepted, but it can move, so the checkout follows it on every start and is reported as unpinned.
         wordpress_custom_plugins:
           - slug: my-plugin
             source: https://github.com/org/my-plugin.git
+            ref: 0123456789abcdef0123456789abcdef01234567 # v1.2.0
           - slug: my-plugin-with-fixup
             source: https://github.com/org/my-plugin-with-fixup.git
             post_install_commands:
@@ -93,6 +101,7 @@ services:
         wordpress_custom_themes:
           - slug: my-theme
             source: https://github.com/org/my-theme.git
+            ref: 0123456789abcdef0123456789abcdef01234567
 
   nginx:
     ports:
@@ -108,6 +117,10 @@ services:
     ports:
       - 127.0.0.1:${MAILPIT_PORT:-8025}:8025
 ```
+
+Entries without `version`, `sha256` or a `ref` with a full commit SHA install whatever the source serves at that moment and are reported in the log. Set `WORDPRESS_SETUP_REQUIRE_PINNED=1` to skip them instead.
+
+Pins live in the project that supplies `WORDPRESS_SETUP_CONFIG_YAML`, so that project keeps them up to date, for example with a Renovate custom manager matching `ref: <sha> # vX.Y.Z`, `version` or `sha256` in its own Compose file. The values in this README and in the tests are only examples.
 
 After that, start the stack with the standard Compose command:
 
